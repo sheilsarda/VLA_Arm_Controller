@@ -1,14 +1,20 @@
 from csv import reader
 import numpy as np
+from robot_initializer import RobotInitializer
+from robot_communication import *
+ROBOT_IP = "192.168.40.128"
 
 class WorkspaceObstacle:
+
     def __init__(self, obstacle_file_list: str, grex_location_file_list: str):
         self.obstacle_file_list = obstacle_file_list
         self.grex_location_file_list = grex_location_file_list
         self.obstacle_list = []
-        self.load_obstacles()
         self.grex_location_list = []
+        self.load_obstacles()
         self.load_grex_locations()
+        self.robot_initializer = RobotInitializer()
+        self.robot_initializer.create_socket_and_initialize_robot()
 
     def load_obstacles(self) -> None:
         """
