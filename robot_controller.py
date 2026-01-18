@@ -1,8 +1,7 @@
 from csv import reader
 import numpy as np
 from robot_initializer import RobotInitializer
-from robot_communication import *
-ROBOT_IP = "192.168.40.128"
+from robot_comms_for_sim_ur3 import *
 
 class WorkspaceObstacle:
 
@@ -53,5 +52,6 @@ class WorkspaceObstacle:
 
 if __name__ == "__main__":
     wc = WorkspaceObstacle("module_data.csv", "grex_location_data.csv")
+    print(get_base_cartesian_pose(), get_base_cartesian_velocity())
     # print(wc.obstacle_list)
     # print(wc.grex_location_list)
