@@ -1,7 +1,7 @@
 from csv import reader
 import numpy as np
 from robot_initializer import RobotInitializer
-from robot_comms_for_sim_ur3 import *
+from robot_comms_for_ur_sim import *
 
 class WorkspaceObstacle:
 
