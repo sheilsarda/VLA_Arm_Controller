@@ -47,11 +47,27 @@ class WorkspaceObstacle:
                 self.grex_location_list.append({
                     'name': grex_location_name,
                     'position': position,
-                    'euler_angles_rad': np.deg2rad(euler_angles_deg),
+                    'euler_angles': euler_angles_deg,
                 })
+            self.grex_location_list.insert(0, {
+                'name': 'start',
+                'position': [0, 0, 0],
+                'euler_angles': [0, 0, 0],
+            })
 
 if __name__ == "__main__":
     wc = WorkspaceObstacle("module_data.csv", "grex_location_data.csv")
-    print(get_base_cartesian_pose(), get_base_cartesian_velocity())
+    
+    iters = 0
+    while True:
+        target = wc.grex_location_list[iters % len(wc.grex_location_list)]
+        move_to_base_cartesian_position(
+            target['position'][0], target['position'][1], target['position'][2], 
+            target['euler_angles'][0], target['euler_angles'][1], target['euler_angles'][2])
+        time.sleep(5)
+        print(get_base_cartesian_pose(), get_base_cartesian_velocity())
+        print(get_angular_pose(), get_angular_velocity())
+        print(get_tool_voltage())
+        iters += 1
     # print(wc.obstacle_list)
     # print(wc.grex_location_list)

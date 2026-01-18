@@ -3,7 +3,7 @@ Below are a list of functions that you may use to get the described information 
 You may fully rely on the descriptions of each function to accurately convey what is being returned by the function itself.
 '''
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from socket import socket, AF_INET, SOCK_STREAM
 import struct
 import threading
@@ -70,8 +70,10 @@ class URRobotState:
                     # Motion parameters (stored for acceleration/velocity control)
                     instance._linear_acceleration = DEFAULT_ACCELERATION
                     instance._linear_velocity = DEFAULT_VELOCITY
-                    instance._joint_accelerations = [0.0] * 6
+                    instance._joint_accelerations = [DEFAULT_ACCELERATION] * 6
+                    instance._joint_acceleration = DEFAULT_ACCELERATION
                     instance._joint_velocity = DEFAULT_VELOCITY
+                    instance._joint_velocity_cmd = [DEFAULT_VELOCITY] * 6
                     
                     instance._data_lock = threading.Lock()
                     instance._reader_thread = None
@@ -281,10 +283,17 @@ class URRobotState:
     
     # ============== Motion parameters ==============
     
-    def set_linear_acceleration(self, accel: float):
-        """Set the linear acceleration for cartesian moves (m/s^2)."""
+    def set_linear_acceleration(self, accel: Union[float, List[float]]):
+        """
+        Set the linear acceleration for cartesian moves (m/s^2).
+        This only updates in-memory and does not send to the robot, since we don't have a way of setting / getting per joint accelerations.
+        """
+        if isinstance(accel, list):
+            if not accel:
+                raise ValueError("accel list must not be empty")
+            accel = max(abs(value) for value in accel)
         with self._data_lock:
-            self._linear_acceleration = accel
+            self._linear_acceleration = float(accel)
     
     def get_linear_acceleration(self) -> float:
         """Get the linear acceleration for cartesian moves (m/s^2)."""
@@ -292,24 +301,52 @@ class URRobotState:
             return self._linear_acceleration
     
     def set_linear_velocity(self, vel: float):
-        """Set the linear velocity for cartesian moves (m/s)."""
+        """
+        Set the linear velocity for cartesian moves (m/s).
+        This only updates in-memory and does not send to the robot, since we don't have a way of setting / getting per joint velocities.
+        """
         with self._data_lock:
             self._linear_velocity = vel
     
-    def set_joint_accelerations(self, joint_accelerations: List[int]):
-        """Set the joint acceleration for joint moves (rad/s^2)."""
+    def set_joint_accelerations(self, joint_accelerations: Union[float, List[float]]):
+        """Set the joint accelerations for joint moves (rad/s^2).
+        This only updates in-memory and does not send to the robot, since we don't have a way of setting / getting per joint accelerations.
+        """
+        if isinstance(joint_accelerations, list):
+            if not joint_accelerations:
+                raise ValueError("joint_accelerations must not be empty")
+            accelerations = [float(value) for value in joint_accelerations]
+            scalar_accel = max(abs(value) for value in accelerations)
+        else:
+            scalar_accel = float(joint_accelerations)
+            accelerations = [scalar_accel] * 6
         with self._data_lock:
-            self._joint_accelerations = joint_accelerations
+            self._joint_accelerations = accelerations
+            self._joint_acceleration = scalar_accel
     
-    def get_joint_accelerations(self) -> List[int]:
-        """Get the joint acceleration for joint moves (rad/s^2)."""
+    def get_joint_accelerations(self) -> List[float]:
+        """Get the joint accelerations for joint moves (rad/s^2).
+        This only returns the in-memory value, since we don't have a way of getting per joint accelerations.
+        """
         with self._data_lock:
-            return self._joint_accelerations
+            return list(self._joint_accelerations)
     
-    def set_joint_velocities(self, joint_velocities: List[int]):
-        """Set the joint velocity for joint moves (rad/s)."""
+    def set_joint_velocities(self, joint_velocities: Union[float, List[float]]):
+        """
+        Set the joint velocities for joint moves (rad/s).
+        This only updates in-memory and does not send to the robot, since we don't have a way of setting / getting per joint velocities.
+        """
+        if isinstance(joint_velocities, list):
+            if not joint_velocities:
+                raise ValueError("joint_velocities must not be empty")
+            velocities = [float(value) for value in joint_velocities]
+            scalar_velocity = max(abs(value) for value in velocities)
+        else:
+            scalar_velocity = float(joint_velocities)
+            velocities = [scalar_velocity] * 6
         with self._data_lock:
-            self._joint_velocities = joint_velocities
+            self._joint_velocity_cmd = velocities
+            self._joint_velocity = scalar_velocity
     
     # ============== Movement commands ==============
     
@@ -324,8 +361,8 @@ class URRobotState:
     def move_joints(self, j1: float, j2: float, j3: float, j4: float, j5: float, j6: float) -> bool:
         """Move to joint positions using joint interpolation."""
         with self._data_lock:
-            a = self._joint_accelerations
-            v = self._joint_velocities
+            a = self._joint_acceleration
+            v = self._joint_velocity
         script = f"movej([{j1}, {j2}, {j3}, {j4}, {j5}, {j6}], a={a}, v={v})"
         return self.send_urscript(script)
     
@@ -424,13 +461,13 @@ def set_base_cartesian_velocity(cartesian_velocity: List[int]) -> None:
 
 # Acceleration
 
-def get_base_cartesian_acceleration() -> List[int]:
-    '''Returns a list of 6 integers, each describing the (x, y, z, rx, ry, rz) acceleration of the robot.'''
+def get_base_cartesian_acceleration() -> float:
+    '''Returns the scalar linear acceleration used for cartesian moves (m/s^2).'''
     return _robot_state.get_linear_acceleration()
 
 
-def set_base_cartesian_acceleration(cartesian_acceleration: List[int]) -> None:
-    '''Takes in a list of accelerations for each cartesian value (in base frame) (x, y, z, rx, ry, rz) and sets each position to the specified acceleration value'''
+def set_base_cartesian_acceleration(cartesian_acceleration: Union[float, List[float]]) -> None:
+    '''Sets the scalar linear acceleration used for cartesian moves (m/s^2).'''
     _robot_state.set_linear_acceleration(cartesian_acceleration)
 
 # Force
@@ -470,25 +507,25 @@ def get_angular_velocity() -> List[int]:
     return _robot_state.get_joint_velocities()
 
 
-def set_angular_velocity(joint_velocity: List[int]) -> None:
+def set_angular_velocity(joint_velocity: Union[float, List[float]]) -> None:
     '''
-    Takes in a list of velocities for each joint and sets each joint to the specified velocity value
+    Sets the scalar joint velocity used for joint moves (rad/s).
     '''
     _robot_state.set_joint_velocities(joint_velocity)
 
 
 # Accelerations
 
-def get_angular_acceleration() -> List[int]:
+def get_angular_acceleration() -> List[float]:
     '''
-    Returns a list of 6 integers, each describing the angular (joint 1, joint 2, joint 3, joint 4, joint 5, joint 6) acceleration of the robot.
+    Returns the per-joint accelerations used for joint moves (rad/s^2).
     '''
     return _robot_state.get_joint_accelerations()
 
 
-def set_angular_acceleration(joint_acceleration: List[int]) -> None:    
+def set_angular_acceleration(joint_acceleration: Union[float, List[float]]) -> None:    
     '''
-    Takes in a list of accelerations for each joint and sets each joint to the specified acceleration value
+    Sets the per-joint accelerations used for joint moves (rad/s^2).
     '''
     _robot_state.set_joint_accelerations(joint_acceleration)
 
@@ -508,6 +545,7 @@ def power_on_tool() -> None:
 
 def get_tool_voltage() -> int:
     '''Returns 24 if the tool is powered with 24 V. Returns 0 if the tool is not powered on.'''
+    return _robot_state.get_tool_voltage()
 
 
 def engage_tool() -> int:
