@@ -8,8 +8,8 @@ from time import sleep
 from time import time
 
 # If we want to run this in sim, then use `robot_comms_for_ur_sim.py`, else use stubbed functions in `robot_communication.py`
-# from robot_comms_for_ur_sim import *
-from robot_communication import * 
+from robot_comms_for_ur_sim import *
+# from robot_communication import * 
 
 DEFAULT_HEIGHT = 500
 DEFUALT_DEPTH_FROM_RAIL = 500

@@ -6,8 +6,8 @@ from enum import Enum
 from collections import deque
 
 # Use sim or stubbed comms based on environment
-# from robot_comms_for_ur_sim import *
-from robot_communication import *
+from robot_comms_for_ur_sim import *
+# from robot_communication import *
 
 class AnomalyType(Enum):
     """Types of anomalies the agent can detect."""

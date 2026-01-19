@@ -193,8 +193,6 @@ class URRobotState:
                     # Only parse if it's the expected size
                     if packet_length == PACKET_SIZE:
                         self._parse_packet(packet)
-                    else:
-                        print(f"Unexpected packet size: {packet_length} (expected {PACKET_SIZE})")
                         
             except Exception as e:
                 if self._running:
