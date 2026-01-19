@@ -1,11 +1,16 @@
 from typing import List, Dict, Tuple, Optional
+import os
 import pybullet as p
 import pybullet_data
 from ikpy.chain import Chain
 
+# Absolute path to URDF (primitive collision shapes, no mesh dependencies)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_URDF_PATH = os.path.join(_SCRIPT_DIR, "ur5e_collision.urdf")
+
 class PathPlanner:
     def __init__(self):
-        self.chain = Chain.from_urdf_file("universalUR5e.urdf")
+        self.chain = Chain.from_urdf_file(_URDF_PATH)
         
         # PyBullet setup
         self._physics_client: Optional[int] = None
@@ -23,7 +28,7 @@ class PathPlanner:
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         
         self._robot_id = p.loadURDF(
-            "universalUR5e.urdf",
+            _URDF_PATH,
             basePosition=[0, 0, 0],
             baseOrientation=p.getQuaternionFromEuler([0, 0, 0]),
             useFixedBase=True

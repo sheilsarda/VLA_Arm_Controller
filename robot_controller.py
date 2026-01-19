@@ -71,7 +71,7 @@ class RobotController:
 
 if __name__ == "__main__":
     controller = RobotController()
-
+    print("------------------ STARTING PATH PLANNING ------------------")
     while True:
         for target_name, target_info in controller.grex_location_dict.items():
             current_joint_position = get_angular_pose()
@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 obs_data['name'] = name_of_obstacle  # Include name for collision report
                 obstacles_to_consider.append(obs_data)
 
-            print(f"Computed waypoints for move from {current_joint_position} to {target_name}: {target_info['position']} | euler angles {target_info['euler_angles']} | rail position {target_info['rail_position']} | module width {target_info['module_width']}")
+            print(f"Computed {len(trajectory)} waypoints for move from {current_joint_position} to {target_name}: {target_info['position']} | euler angles {target_info['euler_angles']} | rail position {target_info['rail_position']} | module width {target_info['module_width']}")
 
             collisions = controller.path_planner.check_trajectory_against_workspace_obstacles(
                 trajectory,
@@ -93,7 +93,7 @@ if __name__ == "__main__":
             
             if collisions:
                 print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
-                break
+                exit(1)
             
             sleep(5)
             
