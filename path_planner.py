@@ -17,7 +17,14 @@ class PathPlanner:
             trajectory.append(q_waypoint)
         return trajectory
     
-    def check_trajectory_against_workspace_obstacles(self, trajectory, start_position, start_rail_position, obstacles):
+    def check_trajectory_against_workspace_obstacles(self, trajectory, start_position, start_rail_position, obstacles) -> List[str]:
         """
         TODO: Use Pybullet or some other sim to check if the trajectory shows robot is in collision with any workspace obstacles.
         """
+
+        # Step 1. Create pybullet env w/ robotic arm
+        # Step 2. Add obstacles basd on obstacle info
+        # Step 3. Take into account rail position, since robot is on a moveable base; this should be a translation of robot coordinates
+        # Step 4. Step through trajectory and check for collisions
+        # Step 5. If no collisions, return empty list; otherwise, return list of obstacles that are in collision
+
