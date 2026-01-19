@@ -4,8 +4,8 @@ from robot_initializer import RobotInitializer
 from path_planner import PathPlanner
 from time import sleep
 # If we want to run this in sim, then use `robot_comms_for_ur_sim.py`, else use stubbed functions in `robot_communication.py`
-# from robot_comms_for_ur_sim import *
-from robot_communication import * 
+from robot_comms_for_ur_sim import *
+# from robot_communication import * 
 
 DEFAULT_HEIGHT = 500
 DEFUALT_DEPTH_FROM_RAIL = 500
@@ -23,11 +23,14 @@ class RobotController:
         self.robot_initializer.create_socket_and_initialize_robot()
         self.path_planner = PathPlanner()
 
-        self.workspace_obstacles_to_consider_per_target = {
-            'Output for Scientist': ['Add Media'],
-            'Add Media': ['Output for Scientist'],
-            'Incubator': ['Sample'],
-            'Sample': ['Incubator'],
+        self.workspace_obstacles_to_consider_per_target = { 
+            # this set uses `module_data` to determine which grex objects are in the same "module" based on rail position. 
+            # Additionally, we rule out 'Output for Scientist' as an obstacle in the same module, because `Add Media` is at -700mm Y, and `Output for Scientist` is at +400mm, therefore on the other side of the rail
+
+            'Output for Scientist': [],
+            'Add Media': [],
+            'Incubator': [],
+            'Sample': [],
         }
 
     def load_grex_locations(self, grex_location_file_list: str) -> None:
@@ -95,5 +98,8 @@ if __name__ == "__main__":
                 print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
                 exit(1)
             
-            sleep(5)
+            for waypoint in trajectory:
+                move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
+                sleep(0.25)
+            # sleep(5)
             

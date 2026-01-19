@@ -35,8 +35,8 @@ TOOL_VOLTAGE_OFFSET = 740       # Tool voltage actual: 1 double (8 bytes)
 SPEED_SCALING_OFFSET = 756      # Speed scaling: 1 double (8 bytes)
 
 # Default motion parameters
-DEFAULT_ACCELERATION = 1.2  # m/s^2 for linear, rad/s^2 for joint
-DEFAULT_VELOCITY = 0.25     # m/s for linear, rad/s for joint
+DEFAULT_ACCELERATION = 40  # m/s^2 for linear, rad/s^2 for joint
+DEFAULT_VELOCITY = 3.14     # rad/s for joint
 
 
 class URRobotState:
