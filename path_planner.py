@@ -3,6 +3,8 @@ import os
 import pybullet as p
 import pybullet_data
 from ikpy.chain import Chain
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Absolute path to URDF (primitive collision shapes, no mesh dependencies)
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -173,7 +175,102 @@ class PathPlanner:
             alpha = i / (n_waypoints - 1)
             q_waypoint = [(1 - alpha) * start_position[joint] + alpha * q_end[joint] for joint in range(len(start_position))]
             trajectory.append(q_waypoint)
+        
+        # Uncomment this line to show visualization
+        # self.visualize_trajectory(trajectory)
+        
         return trajectory
+
+    def visualize_trajectory(self, trajectory: List[List[float]], show_waypoint_markers: bool = True) -> None:
+        """
+        Visualize a trajectory in 3D space showing where all robot links travel.
+        
+        Args:
+            trajectory: List of joint configurations from plan_trajectory()
+            show_waypoint_markers: If True, show dots at each waypoint for each link
+        """
+        num_links = p.getNumJoints(self._robot_id) + 1  # +1 for base
+        
+        # Collect link positions at each waypoint
+        # link_paths[link_idx] = [[x,y,z], [x,y,z], ...] for each waypoint
+        link_paths = [[] for _ in range(num_links)]
+        
+        for joint_config in trajectory:
+            self._set_robot_configuration(joint_config)
+            
+            # Get base link position
+            base_pos, _ = p.getBasePositionAndOrientation(self._robot_id)
+            link_paths[0].append(list(base_pos))
+            
+            # Get each joint/link position
+            for link_idx in range(p.getNumJoints(self._robot_id)):
+                link_state = p.getLinkState(self._robot_id, link_idx)
+                link_pos = link_state[0]  # World position of link frame
+                link_paths[link_idx + 1].append(list(link_pos))
+        
+        # Convert to numpy arrays for easier plotting
+        link_paths = [np.array(path) for path in link_paths]
+        
+        # Get link names for legend
+        link_names = ["base"]
+        for i in range(p.getNumJoints(self._robot_id)):
+            joint_info = p.getJointInfo(self._robot_id, i)
+            link_names.append(joint_info[12].decode('utf-8'))  # Link name
+        
+        # Create 3D plot
+        fig = plt.figure(figsize=(12, 10))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Color map for different links
+        colors = plt.cm.viridis(np.linspace(0, 1, num_links))
+        
+        for link_idx, (path, color, name) in enumerate(zip(link_paths, colors, link_names)):
+            if len(path) == 0:
+                continue
+                
+            # Plot the path as a line
+            ax.plot(path[:, 0], path[:, 1], path[:, 2], 
+                   color=color, linewidth=2, label=name, alpha=0.8)
+            
+            if show_waypoint_markers:
+                # Show waypoint markers (smaller dots)
+                ax.scatter(path[:, 0], path[:, 1], path[:, 2], 
+                          color=color, s=10, alpha=0.5)
+            
+            # Mark start and end points
+            ax.scatter(*path[0], color=color, s=80, marker='o', edgecolors='black', linewidths=1)
+            ax.scatter(*path[-1], color=color, s=80, marker='s', edgecolors='black', linewidths=1)
+        
+        # Also draw the robot arm at start and end configurations for reference
+        for config_idx, (config, linestyle) in enumerate([(trajectory[0], '--'), (trajectory[-1], '-')]):
+            self._set_robot_configuration(config)
+            arm_positions = []
+            base_pos, _ = p.getBasePositionAndOrientation(self._robot_id)
+            arm_positions.append(base_pos)
+            for link_idx in range(p.getNumJoints(self._robot_id)):
+                link_state = p.getLinkState(self._robot_id, link_idx)
+                arm_positions.append(link_state[0])
+            arm_positions = np.array(arm_positions)
+            label = 'Start pose' if config_idx == 0 else 'End pose'
+            ax.plot(arm_positions[:, 0], arm_positions[:, 1], arm_positions[:, 2],
+                   color='gray', linewidth=3, linestyle=linestyle, alpha=0.6, label=label)
+        
+        ax.set_xlabel('X (m)')
+        ax.set_ylabel('Y (m)')
+        ax.set_zlabel('Z (m)')
+        ax.set_title(f'Robot Trajectory Visualization ({len(trajectory)} waypoints)')
+        ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1), fontsize=8)
+        
+        # Equal aspect ratio
+        all_points = np.vstack(link_paths)
+        max_range = np.max(np.ptp(all_points, axis=0)) / 2
+        mid = np.mean(all_points, axis=0)
+        ax.set_xlim(mid[0] - max_range, mid[0] + max_range)
+        ax.set_ylim(mid[1] - max_range, mid[1] + max_range)
+        ax.set_zlim(mid[2] - max_range, mid[2] + max_range)
+        
+        plt.tight_layout()
+        plt.show()
 
     def check_trajectory_against_workspace_obstacles(
         self,

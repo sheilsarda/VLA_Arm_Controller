@@ -21,7 +21,7 @@ PRIMARY_PORT = 30001     # Primary interface - for sending URScript commands
 
 # UR e-Series Real-time packet structure offsets (in bytes)
 # Packet size: 1116 bytes for e-Series
-PACKET_SIZE = 1116
+PACKET_SIZE = 1220
 
 # Data offsets in the real-time packet (all values are big-endian doubles)
 JOINT_POSITIONS_OFFSET = 252    # q_actual: 6 doubles (48 bytes) - joint positions in radians
@@ -34,10 +34,11 @@ JOINT_TEMPERATURES_OFFSET = 692 # Joint temperatures: 6 doubles (48 bytes)
 TOOL_VOLTAGE_OFFSET = 740       # Tool voltage actual: 1 double (8 bytes)
 SPEED_SCALING_OFFSET = 756      # Speed scaling: 1 double (8 bytes)
 
-# Default motion parameters
-DEFAULT_ACCELERATION = 40  # m/s^2 for linear, rad/s^2 for joint
-DEFAULT_VELOCITY = 3.14     # rad/s for joint
-
+# Default motion parameters for joint moves sourced from UR5e spec sheet (https://www.universal-robots.com/manuals/EN/HTML/SW5_19/Content/prod-usr-man/complianceUR5e/H_g5_sections/appendix_g5/tech_spec_sheet.htm)
+DEFAULT_ACCELERATION_RAD_PER_SEC_2 = 40  # rad/s^2 for joint moves
+DEFAULT_VELOCITY_RAD_PER_SEC = 3.14     # maximum velocity for joint moves (rad/s)
+DFAULT_LINEAR_ACCELERATION_M_PER_SEC_2 = 100  # m/s^2 for linear moves
+DEFAULT_LINEAR_VELOCITY_M_PER_SEC = 1.0     # maximum velocity for linear moves (m/s)
 
 class URRobotState:
     """Singleton class to manage persistent connection to UR robot real-time interface."""
@@ -68,12 +69,12 @@ class URRobotState:
                     instance._speed_scaling = 1.0
                     
                     # Motion parameters (stored for acceleration/velocity control)
-                    instance._linear_acceleration = DEFAULT_ACCELERATION
-                    instance._linear_velocity = DEFAULT_VELOCITY
-                    instance._joint_accelerations = [DEFAULT_ACCELERATION] * 6
-                    instance._joint_acceleration = DEFAULT_ACCELERATION
-                    instance._joint_velocity = DEFAULT_VELOCITY
-                    instance._joint_velocity_cmd = [DEFAULT_VELOCITY] * 6
+                    instance._linear_acceleration = DEFAULT_ACCELERATION_RAD_PER_SEC_2
+                    instance._linear_velocity = DEFAULT_LINEAR_VELOCITY_M_PER_SEC
+                    instance._joint_accelerations = [DEFAULT_ACCELERATION_RAD_PER_SEC_2] * 6
+                    instance._joint_acceleration = DEFAULT_ACCELERATION_RAD_PER_SEC_2
+                    instance._joint_velocity = DEFAULT_VELOCITY_RAD_PER_SEC
+                    instance._joint_velocity_cmd = [DEFAULT_VELOCITY_RAD_PER_SEC] * 6
                     
                     instance._data_lock = threading.Lock()
                     instance._reader_thread = None
@@ -167,17 +168,39 @@ class URRobotState:
     
     def _read_loop(self):
         """Background thread that continuously reads and parses robot state."""
+        buffer = b''
+        
         while self._running and self._rt_socket:
             try:
-                # Read exactly one packet
-                data = self._receive_exact(PACKET_SIZE)
-                if data and len(data) == PACKET_SIZE:
-                    self._parse_packet(data)
+                # Read available data
+                chunk = self._rt_socket.recv(4096)
+                if not chunk:
+                    continue
+                buffer += chunk
+                
+                # Process complete packets
+                while len(buffer) >= 4:
+                    # First 4 bytes = packet length (big-endian int32)
+                    packet_length = struct.unpack('>I', buffer[:4])[0]
+                    
+                    if len(buffer) < packet_length:
+                        break  # Wait for more data
+                    
+                    # Extract one complete packet
+                    packet = buffer[:packet_length]
+                    buffer = buffer[packet_length:]
+                    
+                    # Only parse if it's the expected size
+                    if packet_length == PACKET_SIZE:
+                        self._parse_packet(packet)
+                    else:
+                        print(f"Unexpected packet size: {packet_length} (expected {PACKET_SIZE})")
+                        
             except Exception as e:
                 if self._running:
                     print(f"Error reading robot state: {e}")
-                    time.sleep(0.1)
-    
+                    time.sleep(0.1)    
+
     def _receive_exact(self, num_bytes: int) -> Optional[bytes]:
         """Receive exactly num_bytes from the socket."""
         data = b''
@@ -233,7 +256,7 @@ class URRobotState:
                 self._joint_temperatures = list(joint_temp)
                 self._tool_voltage = tool_voltage
                 self._speed_scaling = speed_scaling
-                
+
         except struct.error as e:
             print(f"Error parsing packet: {e}")
     

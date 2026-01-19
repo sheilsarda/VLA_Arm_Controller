@@ -98,8 +98,8 @@ if __name__ == "__main__":
                 print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
                 exit(1)
             
-            for waypoint in trajectory:
-                move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
-                sleep(0.25)
-            # sleep(5)
+            # for waypoint in trajectory:
+            #     move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
+            #     sleep(1.0)
+            sleep(5)
             
