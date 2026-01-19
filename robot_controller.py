@@ -24,14 +24,20 @@ class RobotController:
         self.robot_initializer = RobotInitializer()
         self.path_planner = PathPlanner()
 
-        self.workspace_obstacles_to_consider_per_target = { 
-            # this set uses `module_data` to determine which grex objects are in the same "module" based on rail position. 
-            # Additionally, we rule out 'Output for Scientist' as an obstacle in the same module, because `Add Media` is at -700mm Y, and `Output for Scientist` is at +400mm, therefore on the other side of the rail
+        """
+        This dictionary is used to determine which grex objects are in the same "module" based on rail position. Additionally, we rule out 'Output for Scientist' as an obstacle in the same module, because `Add Media` is at -700mm Y, and `Output for Scientist` is at +400mm, therefore on the other side of the rail
 
-            'Output for Scientist': [],
+        TODOs: 
+        - investigate why the trajectory_planner.check_trajectory_against_workspace_obstacles() method says the trajectory planned from approximately 'Output for Scientist' to 'Add Media' collide with the axis aligned bounding box obstacle for. Hypotheses I've investigated thus far:
+            - moving the robot arm to a neutral position away from the previous target (I tried moving it to the home position), to ensure the starting state was not in collision with the obstacle bounding boxes did not fix the issue
+        - sometimes the arm times out on a final target position where several joints are ~0.1 - pi/2 radians away from commanded target 
+        """
+        self.workspace_obstacles_to_consider_per_target = { 
+            'Output for Scientist': ['Add Media'],
             'Add Media': [],
-            'Incubator': [],
+            'Incubator': ['Sample'],
             'Sample': [],
+            'Neutral Position': [],
         }
 
     def load_grex_locations(self, grex_location_file_list: str) -> None:
@@ -55,6 +61,7 @@ class RobotController:
                     'depth_from_rail': DEFUALT_DEPTH_FROM_RAIL,
                 }
 
+
     def load_rail_positions(self, module_data_file_list: str) -> None:
         """
         Loads the obstacles from the obstacle file list.
@@ -73,46 +80,63 @@ class RobotController:
                 self.grex_location_dict[obstacle_name]['module_width'] = module_width
 
 
+    def is_robot_in_collision(self) -> bool:
+        collision_statuses = ['PROTECTIVE_STOP', 'SAFEGUARD_STOP', 'SYSTEM_EMERGENCY_STOP', 'ROBOT_EMERGENCY_STOP', 'FAULT', 'AUTOMATIC_MODE_SAFEGUARD_STOP']
+        return self.robot_initializer.status['safetystatus'] in collision_statuses
+
+    def move_to_target(self, trajectory: List[List[float]]) -> None:
+        """
+        Moves the robot to the target, and returns either after a 20 second timeout, or when the max difference between 
+        any joint's current position and the planned target is < 1e-3 radians.
+        """
+        move_timer = time()
+        for waypoint in trajectory:
+            if self.is_robot_in_collision():
+                print("Robot is in collision, stopping movement; TODO: autorecover here")
+                return
+            move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
+            sleep(0.1)
+
+        pose_difference = np.array(get_angular_pose()) - np.array(trajectory[-1])
+        while time() - move_timer < 20 and max(pose_difference) > 1e-3:
+            if self.is_robot_in_collision():
+                print("Robot is in collision, stopping movement; TODO: autorecover here")
+                return
+            sleep(0.25)
+            pose_difference = np.array(get_angular_pose()) - np.array(trajectory[-1])
+
+        print(f"Diff between current pose and planned trajectory end is {[round(x, 2) for x in pose_difference]} radians")
+
+    def plan_and_execute_trajectory(self, target_name: str) -> None:
+        current_joint_position = get_angular_pose()
+        target_info = self.grex_location_dict[target_name]
+        trajectory = self.path_planner.plan_trajectory(
+            current_joint_position, target_info['position'], target_info['euler_angles'])
+
+        obstacles_to_consider = []
+        for name_of_obstacle in self.workspace_obstacles_to_consider_per_target[target_name]:
+            obs_data = self.grex_location_dict[name_of_obstacle].copy()
+            obs_data['name'] = name_of_obstacle  # Include name for collision report
+            obstacles_to_consider.append(obs_data)
+
+        print(f"Computed {len(trajectory)} waypoints for move to {target_name}: {target_info['position']} | euler angles {target_info['euler_angles']}")
+
+        collisions = self.path_planner.check_trajectory_against_workspace_obstacles(
+            trajectory,
+            get_rail_pose(),
+            obstacles_to_consider)
+        
+        if collisions:
+            print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
+            exit(1)
+        
+        self.move_to_target(trajectory)
+
 if __name__ == "__main__":
-    controller = RobotController()
+
     print("------------------ STARTING PATH PLANNING ------------------")
+    controller = RobotController()
     while True:
-        waypoint_timer = time()
-        for target_name, target_info in controller.grex_location_dict.items():
-            current_joint_position = get_angular_pose()
-            trajectory = controller.path_planner.plan_trajectory(
-                current_joint_position, target_info['position'], target_info['euler_angles'])
-
-            obstacles_to_consider = []
-            for name_of_obstacle in controller.workspace_obstacles_to_consider_per_target[target_name]:
-                obs_data = controller.grex_location_dict[name_of_obstacle].copy()
-                obs_data['name'] = name_of_obstacle  # Include name for collision report
-                obstacles_to_consider.append(obs_data)
-
-            print(f"Computed {len(trajectory)} waypoints for move from {current_joint_position} to {target_name}: {target_info['position']} | euler angles {target_info['euler_angles']} | rail position {target_info['rail_position']} | module width {target_info['module_width']}")
-
-            collisions = controller.path_planner.check_trajectory_against_workspace_obstacles(
-                trajectory,
-                get_rail_pose(),
-                obstacles_to_consider)
-            
-            if collisions:
-                print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
-                exit(1)
-            
-            waypoint_timer = time()
-            for waypoint in trajectory:
-                move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
-                sleep(0.5)
-
-            l2_norm_from_target = np.linalg.norm(np.array(current_joint_position) - np.array(trajectory[-1]))
-            diff_between_cycles = l2_norm_from_target
-            while l2_norm_from_target > 0.5 and time() - waypoint_timer < 20 and diff_between_cycles > 1e-5:
-                sleep(0.25)
-                old_l2_norm_from_target = l2_norm_from_target
-                l2_norm_from_target = np.linalg.norm(np.array(current_joint_position) - np.array(trajectory[-1]))
-                diff_between_cycles = abs(l2_norm_from_target - old_l2_norm_from_target)
-
-            print(f"L2 norm of the vector diff between current pose and planned trajectory end was {l2_norm_from_target} radians")
-
-            
+        
+        for target_name in controller.grex_location_dict.keys():
+            controller.plan_and_execute_trajectory(target_name)
