@@ -24,10 +24,11 @@ The anomaly events are monitored within `robot_controller.py`, and the planner i
 - PyBullet for collision checking against axis-aligned bounding box obstacles transformed to robot base frame
 
 #### Robot Communication (`robot_comms_for_ur_sim.py` and `robot_communication.py`)
-- `robot_comms_for_ur_sim.py`: Real interface. Singleton `URRobotState` connects to real-time port 30003 (125Hz state stream) and primary port 30001 (URScript commands). Parses packet offsets for joint positions/velocities/currents, TCP pose/force, temps.
-- `robot_communication.py`: Stubbed functions returning dummy values for offline testing.
 
-Toggle via import in `robot_controller.py` and `collision_detection_agent.py`.
+- `robot_communication.py`: Unchanged from the as-provided version. My understanding is that these are stubbed functions returning dummy values for offline testing.
+- `robot_comms_for_ur_sim.py`: Since the stubbed version above doesn't hook into UR Sim, and thus can't be used to end-to-end test motion planning, collision avoidance, etc. I went ahead and filled in the stubs by reading UR documentation. 
+    - This has been tested end-to-end in UR Sim for the UR5e robot; I'm not sure which specific arm in the lineup to use here, so based on trial and error chose the UR5 since it was able to reach all the locations we need to plan between for this challenge (based on GREX location data)
+- To toggle between the stubbed version and the implemented one, we need to toggle 2 import statements for which comms methods to use. These are present at the top of the files in `robot_controller.py` and `collision_detection_agent.py`.
 
 ### Config Files
 - `grex_location_data.csv`: Station name, XYZ position (mm), euler angles (deg)
@@ -37,10 +38,15 @@ Toggle via import in `robot_controller.py` and `collision_detection_agent.py`.
 ```
 pip install -r requirements.txt
 ```
-Core: `ikpy`, `pybullet`, `numpy`
 
-### Known Issues / TODOs
-- Trajectory to "Output for Scientist" sometimes reports false positive collision with "Add Media" AABB
-- Joint tracking sometimes times out with 0.1-π/2 rad residual error
-- Recovery flow incomplete (needs dashboard popup clear, protective stop unlock)
-- No payload/gripper collision geometry in PyBullet yet
+To run the planner end to end with UR Sim, follow [these](https://www.universal-robots.com/download/software-e-series/simulator-non-linux/offline-simulator-e-series-ur-sim-for-non-linux-5126-lts/) instructions to download UR Sim. On my Windows machine, I ended up using VMWare Workstation.
+
+### Instructions to run this once dependencies are installed
+
+- Note: To run this in a URSim environment, first toggle the comms methods to pull from the `robot_comms_for_ur_sim` file instead of the stubbed one. Else, leave things as-is
+- `python robot_controller.py`
+    - By default, the main method here will infinitely loop through the exercise of starting from any state, enabling the robot arm for movement, planning sequentially through all the targets and executing those targets
+
+    - In the background, we have a couple of things runnning for safety / collision avoidance:
+        - continous monitoring of safety status of the UR arm
+        - continous monitoring of speeds, currents, etc. to detect anomalies
