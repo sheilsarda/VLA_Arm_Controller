@@ -2,7 +2,7 @@
 
 This is Sheil's submission to Multiply Lab's technical challenge. Code is organized across 5 different modules, and I was able to tackle all 5 questions posed in the Technical Challenge.
 
-<video controls src="Demo videos from Sheil/Trajectory planner demo (4x speed).mp4" title="Title"></video>
+<video src="Demo videos from Sheil/Trajectory planner demo (4x speed).mp4" title="Title"></video>
 
 #### Robot Controller (`robot_controller.py`)
 Main orchestrator. Loads station poses from `grex_location_data.csv` and rail positions from `module_data.csv`. Plans trajectories via `PathPlanner`, checks them against AABB workspace obstacles, then executes via waypoint streaming. Monitors for collisions/faults during motion and has a basic force-vector backoff recovery stub.
