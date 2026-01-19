@@ -7,7 +7,7 @@ from typing import List, Optional, Union
 from socket import socket, AF_INET, SOCK_STREAM
 import struct
 import threading
-import time
+from time import sleep
 
 #############################################
 ##
@@ -104,7 +104,7 @@ class URRobotState:
             self._reader_thread.start()
             
             # Wait a moment for first data to arrive
-            time.sleep(0.1)
+            sleep(0.1)
             print(f"Connected to UR robot real-time interface at {ROBOT_IP}:{REALTIME_PORT}")
             return True
             
@@ -199,7 +199,7 @@ class URRobotState:
             except Exception as e:
                 if self._running:
                     print(f"Error reading robot state: {e}")
-                    time.sleep(0.1)    
+                    sleep(0.1)    
 
     def _receive_exact(self, num_bytes: int) -> Optional[bytes]:
         """Receive exactly num_bytes from the socket."""

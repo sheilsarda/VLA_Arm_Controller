@@ -3,6 +3,8 @@ import numpy as np
 from robot_initializer import RobotInitializer
 from path_planner import PathPlanner
 from time import sleep
+from time import time
+
 # If we want to run this in sim, then use `robot_comms_for_ur_sim.py`, else use stubbed functions in `robot_communication.py`
 from robot_comms_for_ur_sim import *
 # from robot_communication import * 
@@ -20,7 +22,6 @@ class RobotController:
         self.load_grex_locations("grex_location_data.csv")
         self.load_rail_positions("module_data.csv")
         self.robot_initializer = RobotInitializer()
-        self.robot_initializer.create_socket_and_initialize_robot()
         self.path_planner = PathPlanner()
 
         self.workspace_obstacles_to_consider_per_target = { 
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     controller = RobotController()
     print("------------------ STARTING PATH PLANNING ------------------")
     while True:
-        waypoint_timer = time.time()
+        waypoint_timer = time()
         for target_name, target_info in controller.grex_location_dict.items():
             current_joint_position = get_angular_pose()
             trajectory = controller.path_planner.plan_trajectory(
@@ -99,14 +100,14 @@ if __name__ == "__main__":
                 print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
                 exit(1)
             
-            waypoint_timer = time.time()
+            waypoint_timer = time()
             for waypoint in trajectory:
                 move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
                 sleep(0.5)
 
             l2_norm_from_target = np.linalg.norm(np.array(current_joint_position) - np.array(trajectory[-1]))
             diff_between_cycles = l2_norm_from_target
-            while l2_norm_from_target > 0.5 and time.time() - waypoint_timer < 20 and diff_between_cycles > 1e-5:
+            while l2_norm_from_target > 0.5 and time() - waypoint_timer < 20 and diff_between_cycles > 1e-5:
                 sleep(0.25)
                 old_l2_norm_from_target = l2_norm_from_target
                 l2_norm_from_target = np.linalg.norm(np.array(current_joint_position) - np.array(trajectory[-1]))

@@ -1,10 +1,43 @@
 from socket import socket, AF_INET, SOCK_STREAM
-import time
+from time import sleep
+import threading
 
 ROBOT_IP = "192.168.40.128"
 DASHBOARD_SERVER_PORT = 29999
 
 class RobotInitializer:
+    def __init__(self):
+        self.status = {
+            'safetystatus': '',
+            'robotmode': '',
+            'running': ''
+        }
+
+        self.create_socket_and_initialize_robot()
+        self.monitoring_thread = threading.Thread(target=self._monitoring_thread)
+        self.monitoring_thread.start()
+
+    def _monitoring_thread(self) -> None:
+        """
+        Continuously monitor robot so controller knows if anything goes wrong
+        """
+        try:
+            with socket(AF_INET, SOCK_STREAM) as s:
+                s.connect((ROBOT_IP, DASHBOARD_SERVER_PORT))
+                response = s.recv(1024).decode('utf-8')
+                print(response)
+
+                while True:
+                    s.sendall("robotmode\n".encode('utf-8'))
+                    self.status['robotmode'] = s.recv(1024).decode('utf-8')
+                    s.sendall("safetystatus\n".encode('utf-8'))
+                    self.status['safetystatus'] = s.recv(1024).decode('utf-8')
+                    s.sendall("running\n".encode('utf-8'))
+                    self.status['running'] = s.recv(1024).decode('utf-8')
+            
+        except ConnectionRefusedError as e:
+            print(f"Error: {e}")
+
 
     def power_on_and_initialize_robot_demo_loop(self) -> None:
         """
