@@ -77,18 +77,23 @@ if __name__ == "__main__":
             current_joint_position = get_angular_pose()
             trajectory = controller.path_planner.plan_trajectory(
                 current_joint_position, target_info['position'], target_info['euler_angles'])
-            
-            current_rail_bounds = [get_rail_pose() - ROBOT_MODULE_WIDTH_ON_RAIL/2, get_rail_pose() + ROBOT_MODULE_WIDTH_ON_RAIL/2]
+
             obstacles_to_consider = []
             for name_of_obstacle in controller.workspace_obstacles_to_consider_per_target[target_name]:
-                obstacles_to_consider.append(controller.grex_location_dict[name_of_obstacle])
+                obs_data = controller.grex_location_dict[name_of_obstacle].copy()
+                obs_data['name'] = name_of_obstacle  # Include name for collision report
+                obstacles_to_consider.append(obs_data)
 
-            controller.path_planner.check_trajectory_against_workspace_obstacles(
+            print(f"Computed waypoints for move from {current_joint_position} to {target_name}: {target_info['position']} | euler angles {target_info['euler_angles']} | rail position {target_info['rail_position']} | module width {target_info['module_width']}")
+
+            collisions = controller.path_planner.check_trajectory_against_workspace_obstacles(
                 trajectory,
-                current_joint_position,
-                current_rail_bounds,
+                get_rail_pose(),
                 obstacles_to_consider)
             
-            print(f"Computed waypoints for move from {current_joint_position} to {target_name}: {target_info['position']} | euler angles {target_info['euler_angles']} | rail position {target_info['rail_position']} | module width {target_info['module_width']}")
+            if collisions:
+                print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
+                break
+            
             sleep(5)
             
