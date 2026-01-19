@@ -1,6 +1,6 @@
 human readable name,rail position at center of module (in mm),module width (in mm)
 Incubator,2000,500
+Sample,2000,500
 Output for Scientist,1000,500
 Add Media,1000,500
-Sample,2000,500
 Robotic Arm,-,-

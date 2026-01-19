@@ -24,10 +24,10 @@ class RobotController:
         self.path_planner = PathPlanner()
 
         self.workspace_obstacles_to_consider_per_target = {
-            'Incubator': ['Add Media', 'Output for Scientist'],
-            'Output for Scientist': ['Incubator', 'Sample'],
-            'Sample': ['Output for Scientist', 'Incubator'], # 'Sample' and 'Add Media' are the same position, so we don't consider the other one in obstacle checks when planning a move to either
-            'Add Media': ['Output for Scientist', 'Incubator'],
+            'Output for Scientist': ['Add Media'],
+            'Add Media': ['Output for Scientist'],
+            'Incubator': ['Sample'],
+            'Sample': ['Incubator'],
         }
 
     def load_grex_locations(self, grex_location_file_list: str) -> None:
