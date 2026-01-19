@@ -126,7 +126,3 @@ class RobotInitializer:
             print("Brakes disengaged; status is ", response)
         else:
             print("Assuming brakes are already disengaged; status is ", current_status)
-
-# if __name__ == "__main__":
-#     rs = RobotInitializer()
-#     rs.power_on_and_initialize_robot_demo_loop()

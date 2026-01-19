@@ -3,6 +3,7 @@ import numpy as np
 from typing import List
 from robot_initializer import RobotInitializer
 from path_planner import PathPlanner
+from collision_detection_agent import RobotCollisionDetectionAgent
 from time import sleep
 from time import time
 
@@ -24,6 +25,9 @@ class RobotController:
         self.load_rail_positions("module_data.csv")
         self.robot_initializer = RobotInitializer()
         self.path_planner = PathPlanner()
+
+        self.collision_detection_agent = RobotCollisionDetectionAgent()
+        self.collision_detection_agent.start_monitoring()
 
         """
         This dictionary is used to determine which grex objects are in the same "module" based on rail position. Additionally, we rule out 'Output for Scientist' as an obstacle in the same module, because `Add Media` is at -700mm Y, and `Output for Scientist` is at +400mm, therefore on the other side of the rail
@@ -83,7 +87,8 @@ class RobotController:
 
     def is_robot_in_collision(self) -> bool:
         collision_statuses = ['PROTECTIVE_STOP', 'SAFEGUARD_STOP', 'SYSTEM_EMERGENCY_STOP', 'ROBOT_EMERGENCY_STOP', 'FAULT', 'AUTOMATIC_MODE_SAFEGUARD_STOP']
-        return self.robot_initializer.status['safetystatus'] in collision_statuses
+        return self.robot_initializer.status['safetystatus'] in collision_statuses or self.collision_detection_agent.has_active_anomalies()
+
 
     def move_to_target(self, trajectory: List[List[float]]) -> None:
         """
@@ -152,7 +157,6 @@ class RobotController:
             
     
     def _execute_backoff(self, collision_pose, collision_force, distance_mm) -> None:
-        """Back away from collision point along force vector."""
         # Determine backoff direction from force reading
         fx, fy, fz, _, _, _ = collision_force
         force_magnitude = (fx**2 + fy**2 + fz**2) ** 0.5
