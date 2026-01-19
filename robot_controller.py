@@ -1,13 +1,14 @@
 from csv import reader
 import numpy as np
+from typing import List
 from robot_initializer import RobotInitializer
 from path_planner import PathPlanner
 from time import sleep
 from time import time
 
 # If we want to run this in sim, then use `robot_comms_for_ur_sim.py`, else use stubbed functions in `robot_communication.py`
-from robot_comms_for_ur_sim import *
-# from robot_communication import * 
+# from robot_comms_for_ur_sim import *
+from robot_communication import * 
 
 DEFAULT_HEIGHT = 500
 DEFUALT_DEPTH_FROM_RAIL = 500
@@ -132,6 +133,51 @@ class RobotController:
         
         self.move_to_target(trajectory)
 
+    def recover_from_collision(self, backoff_distance_mm: float = 50.0) -> None:
+        if not self.is_robot_in_collision():
+            return True  # No fault present
+            
+        collision_pose = get_base_cartesian_pose()
+        collision_force = get_cartesian_base_force()
+        print(f"Collision at pose: {collision_pose}; force: {collision_force}")
+        
+        # TODO: implement these steps
+        # 3. Sleep for a few seconds to let the robot settle
+        # 4. Clear safety popup on dashboard if they exist
+        # 5. Unlock protective stop
+        # 6. Wait for robot to be ready
+        
+        # 7. Execute backoff move (reverse along approach vector)
+        self._execute_backoff(collision_pose, collision_force, backoff_distance_mm)
+            
+    
+    def _execute_backoff(self, collision_pose, collision_force, distance_mm) -> None:
+        """Back away from collision point along force vector."""
+        # Determine backoff direction from force reading
+        fx, fy, fz, _, _, _ = collision_force
+        force_magnitude = (fx**2 + fy**2 + fz**2) ** 0.5
+        
+        if force_magnitude < 1.0:
+            # No clear force direction, back off in -Z (up)
+            backoff_vector = [0, 0, -distance_mm, 0, 0, 0]
+        else:
+            # Normalize and reverse force direction
+            scale = -distance_mm / force_magnitude
+            backoff_vector = [fx * scale, fy * scale, fz * scale, 0, 0, 0]
+        
+        # Calculate target pose
+        target_pose = [
+            collision_pose[i] + backoff_vector[i] 
+            for i in range(6)
+        ]
+        
+        # Set conservative velocity/acceleration for recovery move
+        set_base_cartesian_velocity([50, 50, 50, 10, 10, 10])
+        set_base_cartesian_acceleration([100, 100, 100, 20, 20, 20])
+        
+        # Execute backoff
+        move_to_base_cartesian_position(*target_pose)
+        
 if __name__ == "__main__":
 
     print("------------------ STARTING PATH PLANNING ------------------")
@@ -140,3 +186,6 @@ if __name__ == "__main__":
         
         for target_name in controller.grex_location_dict.keys():
             controller.plan_and_execute_trajectory(target_name)
+        
+        if controller.is_robot_in_collision():
+            controller.recover_from_collision()
