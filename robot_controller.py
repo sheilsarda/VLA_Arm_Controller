@@ -76,6 +76,7 @@ if __name__ == "__main__":
     controller = RobotController()
     print("------------------ STARTING PATH PLANNING ------------------")
     while True:
+        waypoint_timer = time.time()
         for target_name, target_info in controller.grex_location_dict.items():
             current_joint_position = get_angular_pose()
             trajectory = controller.path_planner.plan_trajectory(
@@ -98,8 +99,19 @@ if __name__ == "__main__":
                 print(f"WARNING: Trajectory to {target_name} has collisions: {collisions}")
                 exit(1)
             
-            # for waypoint in trajectory:
-            #     move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
-            #     sleep(1.0)
-            sleep(5)
+            waypoint_timer = time.time()
+            for waypoint in trajectory:
+                move_to_angular_position(waypoint[0], waypoint[1], waypoint[2], waypoint[3], waypoint[4], waypoint[5])
+                sleep(0.5)
+
+            l2_norm_from_target = np.linalg.norm(np.array(current_joint_position) - np.array(trajectory[-1]))
+            diff_between_cycles = l2_norm_from_target
+            while l2_norm_from_target > 0.5 and time.time() - waypoint_timer < 20 and diff_between_cycles > 1e-5:
+                sleep(0.25)
+                old_l2_norm_from_target = l2_norm_from_target
+                l2_norm_from_target = np.linalg.norm(np.array(current_joint_position) - np.array(trajectory[-1]))
+                diff_between_cycles = abs(l2_norm_from_target - old_l2_norm_from_target)
+
+            print(f"L2 norm of the vector diff between current pose and planned trajectory end was {l2_norm_from_target} radians")
+
             
