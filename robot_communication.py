@@ -3,6 +3,8 @@ Below are a list of functions that you may use to get the described information 
 You may fully rely on the descriptions of each function to accurately convey what is being returned by the function itself.
 '''
 
+from typing import List
+
 
 #############################################
 ##
