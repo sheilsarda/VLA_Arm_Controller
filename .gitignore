@@ -1,1 +1,11 @@
 *.pyc
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+__pycache__/
+*.pyo
+*.pyd
+.Python
