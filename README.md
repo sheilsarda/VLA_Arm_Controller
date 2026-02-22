@@ -1,7 +1,5 @@
 ### Summary
 
-This is Sheil's submission to Multiply Lab's technical challenge. Code is organized across 5 different modules, and I was able to tackle all 5 questions posed in the Technical Challenge.
-
 <video src="Demo videos from Sheil/Trajectory planner demo (4x speed).mp4" title="Title"></video>
 
 #### Robot Controller (`robot_controller.py`)
