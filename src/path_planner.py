@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 # Absolute path to URDF (primitive collision shapes, no mesh dependencies)
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_URDF_PATH = os.path.join(_SCRIPT_DIR, "ur5e_collision.urdf")
+_URDF_PATH = os.path.join(_SCRIPT_DIR, "..", "urdf", "ur5e_collision.urdf")
 
 class PathPlanner:
     def __init__(self):

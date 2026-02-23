@@ -1,6 +1,12 @@
+#!/usr/bin/env python3
+"""
+Robot Controller - Main orchestrator for robot motion planning and execution.
+Run with: python src/robot_controller.py (after sourcing venv)
+"""
 from csv import reader
 import numpy as np
 import os
+import sys
 from typing import List
 from robot_initializer import RobotInitializer
 from path_planner import PathPlanner
