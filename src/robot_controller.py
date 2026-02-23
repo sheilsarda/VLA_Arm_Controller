@@ -1,5 +1,6 @@
 from csv import reader
 import numpy as np
+import os
 from typing import List
 from robot_initializer import RobotInitializer
 from path_planner import PathPlanner
@@ -15,14 +16,17 @@ DEFAULT_HEIGHT = 500
 DEFUALT_DEPTH_FROM_RAIL = 500
 ROBOT_MODULE_WIDTH_ON_RAIL = 500
 
+# Absolute path to script directory for CSV files
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 class RobotController:
 
     def __init__(self):
 
         self.grex_location_dict = {}
 
-        self.load_grex_locations("grex_location_data.csv")
-        self.load_rail_positions("module_data.csv")
+        self.load_grex_locations(os.path.join(_SCRIPT_DIR, "grex_location_data.csv"))
+        self.load_rail_positions(os.path.join(_SCRIPT_DIR, "module_data.csv"))
         self.robot_initializer = RobotInitializer()
         self.path_planner = PathPlanner()
 
