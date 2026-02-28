@@ -15,7 +15,7 @@
     visual_parameters_file="$(find ur_description)/config/ur5e/visual_parameters.yaml">
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:ur_robot>
- 
+
   <ros2_control name="ur5e_isaac" type="system">
     <hardware>
       <plugin>topic_based_ros2_control/TopicBasedSystem</plugin>
