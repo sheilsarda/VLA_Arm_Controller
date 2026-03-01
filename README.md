@@ -8,6 +8,7 @@ TODO for ROS
 ````sh
 sudo apt update
 sudo apt install ros-jazzy-moveit ros-jazzy-xacro -y
+sudo apt install ros-jazzy-ros2-control ros-jazzy-ros2-controllers -y
 ````
 
 Clone submodule for `ur_description` by running this from root directory
@@ -28,4 +29,11 @@ Then Run setup assistant
 
 ````sh
 ros2 run moveit_setup_assistant moveit_setup_assistant
+colcon build
+source install/setup.bash
+````
+
+Then to run moveit demo
+````sh
+ros2 launch ur5e_isaac_moveit_config demo.launch.py 
 ````
