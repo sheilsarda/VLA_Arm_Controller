@@ -1,58 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
 
-    <transport_descriptors>
-        <transport_descriptor>
-            <transport_id>udp_transport</transport_id>
-            <type>UDPv4</type>
-            <!-- Bind only to the Docker bridge interface facing Windows -->
-            <interfaceWhiteList>
-                <address>192.168.65.6</address>
-                <address>127.0.0.1</address>
-            </interfaceWhiteList>
-        </transport_descriptor>
-    </transport_descriptors>
-
-    <participant profile_name="isaac_bridge_participant" is_default_profile="true">
+    <participant profile_name="ros_participant" is_default_profile="true">
         <rtps>
-            <userTransports>
-                <transport_id>udp_transport</transport_id>
-            </userTransports>
-            <useBuiltinTransports>false</useBuiltinTransports>
-
-            <!-- Unicast discovery: point directly at the Windows host running Isaac Sim -->
             <builtin>
+                <!-- Tell FastDDS to unicast-probe the Windows host on startup.
+                     No port = FastDDS tries participant IDs 0-3 automatically. -->
                 <initialPeersList>
-                    <!-- Windows host (Isaac Sim) — domain 42 metatraffic unicast ports -->
                     <locator>
                         <udpv4>
                             <address>192.168.65.1</address>
-                            <port>17910</port>
-                        </udpv4>
-                    </locator>
-                    <locator>
-                        <udpv4>
-                            <address>192.168.65.1</address>
-                            <port>17912</port>
-                        </udpv4>
-                    </locator>
-                    <locator>
-                        <udpv4>
-                            <address>192.168.65.1</address>
-                            <port>17914</port>
-                        </udpv4>
-                    </locator>
-                    <!-- Loopback (local nodes) -->
-                    <locator>
-                        <udpv4>
-                            <address>127.0.0.1</address>
                         </udpv4>
                     </locator>
                 </initialPeersList>
-                <!-- Disable multicast — it doesn't cross the Docker/WSL2 bridge -->
-                <metatrafficMulticastLocatorList>
-                    <locator/>
-                </metatrafficMulticastLocatorList>
             </builtin>
         </rtps>
     </participant>
