@@ -24,9 +24,8 @@
     },
     "containerEnv": {
         "DISPLAY": "unix:0",
-        "ROS_AUTOMATIC_DISCOVERY_RANGE": "SUBNET",
-        "ROS_DOMAIN_ID": "42",
-        "RMW_IMPLEMENTATION": "rmw_fastrtps_cpp"
+        "ROS_AUTOMATIC_DISCOVERY_RANGE": "LOCALHOST",
+        "ROS_DOMAIN_ID": "42"
     },
     "runArgs": [
         "--net=host",
@@ -39,5 +38,5 @@
        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
        "source=${localEnv:HOME}/.ssh,target=/home/sheil_u24/.ssh,type=bind,consistency=cached"
     ],
-    "postCreateCommand": "sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /home/ws/ && echo 'source /opt/ros/jazzy/setup.bash' >> /home/sheil_u24/.bashrc && echo 'source /home/ws/install/setup.bash 2>/dev/null || true' >> /home/sheil_u24/.bashrc && chown sheil_u24:sheil_u24 /home/sheil_u24/.bashrc && if [ -d ~/.ssh ]; then chmod 700 ~/.ssh && chmod 600 ~/.ssh/* 2>/dev/null || true && chmod 644 ~/.ssh/*.pub 2>/dev/null || true; fi"
+    "postCreateCommand": "sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /home/ws/ && if [ -d ~/.ssh ]; then chmod 700 ~/.ssh && chmod 600 ~/.ssh/* 2>/dev/null || true && chmod 644 ~/.ssh/*.pub 2>/dev/null || true; fi"
 }
