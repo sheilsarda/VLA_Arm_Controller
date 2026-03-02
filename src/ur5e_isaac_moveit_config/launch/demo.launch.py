@@ -1,6 +1,8 @@
 from moveit_configs_utils import MoveItConfigsBuilder
 from launch_ros.actions import Node
 from launch import LaunchDescription
+from launch.actions import RegisterEventHandler
+from launch.event_handlers import OnProcessStart
 
 def generate_launch_description():
     # 1. Load your MoveIt Configs
