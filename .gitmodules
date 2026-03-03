@@ -1,0 +1,4 @@
+[submodule "ur_description"]
+	path = ur_description
+	url = https://github.com/UniversalRobots/Universal_Robots_ROS2_Description.git
+	branch = rolling

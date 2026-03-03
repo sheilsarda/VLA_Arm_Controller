@@ -1,0 +1,5 @@
+location of grex,x in base frame,y in base frame,z in base frame,rx in base frame,ry in base frame,rz in base frame
+Incubator,200,200,200,180,0,0
+Add Media,-125,-700,400,0,180,0
+Sample,-125,-700,400,0,180,0
+Output for Scientist,250,400,300,180,0,0
