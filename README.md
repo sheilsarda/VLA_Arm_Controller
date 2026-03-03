@@ -1,8 +1,5 @@
 ### Summary
 
-TODO for ROS
-
-
 #### From a fresh ROS2 install, need the following dependencies
 
 ````sh
