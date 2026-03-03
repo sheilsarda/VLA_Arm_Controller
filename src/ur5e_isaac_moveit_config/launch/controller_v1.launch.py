@@ -1,11 +1,12 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from moveit_configs_utils import MoveItConfigsBuilder
-from moveit_configs_utils.launches import generate_spawn_controllers_launch, generate_move_group_launch
+from moveit_configs_utils.launches import generate_spawn_controllers_launch
 from launch_ros.actions import Node
 from launch import LaunchDescription
 from launch.actions import RegisterEventHandler
 from launch.event_handlers import OnProcessStart
+from launch.actions import RegisterEventHandler, TimerAction
 
 def generate_launch_description():
     # 1. Load the unified MoveIt config
@@ -40,8 +41,13 @@ def generate_launch_description():
         ],
         output="screen",
     )
+    # Wrap the controller manager in a 3-second delay to allow DDS discovery
+    delay_controller_manager = TimerAction(
+        period=3.0,
+        actions=[controller_manager_node]
+    )
 
-    # 4. Spawners (Using your helper snippet)
+    # 4. Spawners (KEEP THIS EXACTLY AS YOU HAVE IT!)
     spawn_controllers_launch = generate_spawn_controllers_launch(moveit_config)
 
     # Delay spawners until controller manager is ready
@@ -52,8 +58,16 @@ def generate_launch_description():
         )
     )
 
-    # 5. MoveGroup (Using your new helper snippet)
-    move_group_launch = generate_move_group_launch(moveit_config)
+    # 5. MoveGroup with sim time
+    move_group_launch = Node(
+        package="moveit_ros_move_group",
+        executable="move_group",
+        output="screen",
+        parameters=[
+            moveit_config.to_dict(),
+            {"use_sim_time": True},
+        ],
+    )
 
     # 6. RViz
     rviz_node = Node(
@@ -73,7 +87,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         robot_state_publisher,
-        controller_manager_node,
+        delay_controller_manager,
         delay_spawners,
         move_group_launch,
         rviz_node

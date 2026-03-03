@@ -4,11 +4,4 @@
 
     <!-- Import ur5e urdf file -->
     <xacro:include filename="/home/sheil/Development/VLA_Arm_Controller/urdf/ur5e_isaac_sim.urdf.xacro" />
-
-    <!-- Import control_xacro -->
-    <xacro:include filename="ur5e.ros2_control.xacro" />
-
-
-    <xacro:ur5e_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
-
 </robot>

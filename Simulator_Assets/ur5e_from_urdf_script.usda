@@ -8,7 +8,7 @@
             }
             dictionary Perspective = {
                 double3 position = (0.8769182637426026, 1.7509355426065834, 0.6404018558068729)
-                double3 target = (-0.17709678696977005, -0.08556694147446708, 0.027282720052287823)
+                double3 target = (-0.1770967869697705, -0.0855669414744673, 0.027282720052287712)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -68,7 +68,8 @@ def Xform "World"
                 displayName = "Name Override"
                 doc = "Name override for prim lookup in base name search"
             )
-            bool physics:kinematicEnabled = 1
+            bool physics:kinematicEnabled = 0
+            bool physics:rigidBodyEnabled = 1
         }
 
         over "shoulder_link"
@@ -329,11 +330,7 @@ def OmniGraph "ActionGraph"
                 bool isExecution = 1
             }
         )
-        prepend uint inputs:execIn.connect = [
-            </ActionGraph/on_playback_tick.outputs:tick>,
-            </ActionGraph/on_tick.outputs:tick>,
-            </ActionGraph/on_physics_step.outputs:step>,
-        ]
+        prepend uint inputs:execIn.connect = </ActionGraph/on_physics_step.outputs:step>
         custom string inputs:nodeNamespace
         custom string inputs:qosProfile
         custom uint64 inputs:queueSize
@@ -367,26 +364,22 @@ def OmniGraph "ActionGraph"
         )
         prepend uint inputs:execIn.connect = [
             </ActionGraph/on_playback_tick.outputs:tick>,
-            </ActionGraph/on_tick.outputs:tick>,
             </ActionGraph/on_physics_step.outputs:step>,
         ]
         custom string inputs:nodeNamespace
         custom string inputs:qosProfile
         custom uint64 inputs:queueSize
         custom double inputs:timeStamp
-        delete double inputs:timeStamp.connect = [
-            </ActionGraph/on_physics_step.outputs:deltaSimulationTime>,
-            </ActionGraph/on_physics_step.outputs:deltaSystemTime>,
-        ]
+        delete double inputs:timeStamp.connect = </ActionGraph/isaac_read_simulation_time.outputs:simulationTime>
         prepend double inputs:timeStamp.connect = [
             </ActionGraph/on_playback_tick.outputs:time>,
-            </ActionGraph/on_tick.outputs:frame>,
             </ActionGraph/isaac_read_simulation_time.outputs:simulationTime>,
         ]
         custom string inputs:topicName
         token node:type = "isaacsim.ros2.bridge.ROS2PublishClock"
         int node:typeVersion = 1
         uniform token ui:nodegraph:node:expansionState = "open"
+        uniform float2 ui:nodegraph:node:pos = (-267.55725, -273.01108)
     }
 
     def OmniGraphNode "ros2_publish_joint_state" (
@@ -402,7 +395,6 @@ def OmniGraph "ActionGraph"
         )
         prepend uint inputs:execIn.connect = [
             </ActionGraph/on_playback_tick.outputs:tick>,
-            </ActionGraph/on_tick.outputs:tick>,
             </ActionGraph/on_physics_step.outputs:step>,
         ]
         custom string inputs:nodeNamespace
@@ -418,17 +410,63 @@ def OmniGraph "ActionGraph"
             }
         )
         custom double inputs:timeStamp
-        delete double inputs:timeStamp.connect = </ActionGraph/on_physics_step.outputs:deltaSimulationTime>
         prepend double inputs:timeStamp.connect = [
             </ActionGraph/on_playback_tick.outputs:time>,
-            </ActionGraph/on_tick.outputs:frame>,
             </ActionGraph/isaac_read_simulation_time.outputs:simulationTime>,
         ]
         custom string inputs:topicName = "joint_states"
         token node:type = "isaacsim.ros2.bridge.ROS2PublishJointState"
         int node:typeVersion = 1
         uniform token ui:nodegraph:node:expansionState = "open"
-        uniform float2 ui:nodegraph:node:pos = (-115.170364, -53.358418)
+        uniform float2 ui:nodegraph:node:pos = (-265.79834, -43.44869)
+    }
+
+    def OmniGraphNode "ros2_context" (
+        prepend apiSchemas = ["NodeGraphNodeAPI"]
+    )
+    {
+        custom uchar inputs:domain_id
+        custom bool inputs:useDomainIDEnvVar
+        token node:type = "isaacsim.ros2.bridge.ROS2Context"
+        int node:typeVersion = 2
+        custom uint64 outputs:context
+        uniform token ui:nodegraph:node:expansionState = "open"
+        uniform float2 ui:nodegraph:node:pos = (-866.2817, -115.63055)
+    }
+
+    def OmniGraphNode "articulation_controller" (
+        prepend apiSchemas = ["NodeGraphNodeAPI"]
+    )
+    {
+        custom double[] inputs:effortCommand
+        prepend double[] inputs:effortCommand.connect = </ActionGraph/ros2_subscribe_joint_state.outputs:effortCommand>
+        custom uint inputs:execIn (
+            customData = {
+                bool isExecution = 1
+            }
+        )
+        prepend uint inputs:execIn.connect = </ActionGraph/ros2_subscribe_joint_state.outputs:execOut>
+        custom int[] inputs:jointIndices
+        custom token[] inputs:jointNames
+        prepend token[] inputs:jointNames.connect = </ActionGraph/ros2_subscribe_joint_state.outputs:jointNames>
+        custom double[] inputs:positionCommand
+        prepend double[] inputs:positionCommand.connect = </ActionGraph/ros2_subscribe_joint_state.outputs:positionCommand>
+        custom string inputs:robotPath
+        custom rel inputs:targetPrim = </World/ur5e/base_link_inertia> (
+            customData = {
+                dictionary omni = {
+                    dictionary graph = {
+                        string relType = "target"
+                    }
+                }
+            }
+        )
+        custom double[] inputs:velocityCommand
+        prepend double[] inputs:velocityCommand.connect = </ActionGraph/ros2_subscribe_joint_state.outputs:velocityCommand>
+        token node:type = "isaacsim.core.nodes.IsaacArticulationController"
+        int node:typeVersion = 1
+        uniform token ui:nodegraph:node:expansionState = "open"
+        uniform float2 ui:nodegraph:node:pos = (-210.0377, 227.58092)
     }
 
     def OmniGraphNode "on_physics_step" (
@@ -444,7 +482,8 @@ def OmniGraph "ActionGraph"
                 bool isExecution = 1
             }
         )
-        uniform token ui:nodegraph:node:expansionState = "minimized"
+        uniform token ui:nodegraph:node:expansionState = "open"
+        uniform float2 ui:nodegraph:node:pos = (-887.83374, 49.147655)
     }
 
     def OmniGraphNode "isaac_read_simulation_time" (
@@ -457,20 +496,8 @@ def OmniGraph "ActionGraph"
         token node:type = "isaacsim.core.nodes.IsaacReadSimulationTime"
         int node:typeVersion = 1
         custom double outputs:simulationTime
-        uniform token ui:nodegraph:node:expansionState = "minimized"
-    }
-
-    def OmniGraphNode "ros2_context" (
-        prepend apiSchemas = ["NodeGraphNodeAPI"]
-    )
-    {
-        custom uchar inputs:domain_id
-        custom bool inputs:useDomainIDEnvVar
-        token node:type = "isaacsim.ros2.bridge.ROS2Context"
-        int node:typeVersion = 2
-        custom uint64 outputs:context
         uniform token ui:nodegraph:node:expansionState = "open"
-        uniform float2 ui:nodegraph:node:pos = (-962.11145, -79.7984)
+        uniform float2 ui:nodegraph:node:pos = (-861.0775, -268.9546)
     }
 }
 
