@@ -240,6 +240,8 @@ def Xform "World"
                     displayName = "Name Override"
                     doc = "Name override for prim lookup in base name search"
                 )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
                 float state:angular:physics:position = 0
                 float state:angular:physics:velocity = 0
             }
@@ -252,9 +254,6 @@ def Xform "World"
                 )
                 float physics:lowerLimit = -47
                 float physics:upperLimit = 47
-                float physxMimicJoint:rotY:gearing = -1
-                rel physxMimicJoint:rotY:referenceJoint = </World/ur5e/joints/robotiq_85_left_knuckle_joint>
-                uniform token physxMimicJoint:rotY:referenceJointAxis = "rotY"
             }
 
             over "robotiq_85_right_inner_knuckle_joint"
@@ -263,6 +262,8 @@ def Xform "World"
                     displayName = "Name Override"
                     doc = "Name override for prim lookup in base name search"
                 )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
             }
 
             over "robotiq_85_base_joint"
@@ -287,6 +288,8 @@ def Xform "World"
                     displayName = "Name Override"
                     doc = "Name override for prim lookup in base name search"
                 )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
             }
 
             over "robotiq_85_right_finger_joint"
@@ -297,12 +300,19 @@ def Xform "World"
                 )
             }
 
-            over "robotiq_85_right_finger_tip_joint"
+            over "robotiq_85_right_finger_tip_joint" (
+                prepend apiSchemas = ["PhysxMimicJointAPI:rotX"]
+            )
             {
                 string isaac:nameOverride (
                     displayName = "Name Override"
                     doc = "Name override for prim lookup in base name search"
                 )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
+                float physxMimicJoint:rotX:gearing = 1
+                rel physxMimicJoint:rotX:referenceJoint = </World/ur5e/joints/robotiq_85_left_knuckle_joint>
+                uniform token physxMimicJoint:rotX:referenceJointAxis = "rotX"
             }
         }
     }
