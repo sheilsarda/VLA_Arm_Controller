@@ -12,7 +12,18 @@
     <group name="ur_manipulator">
         <chain base_link="base_link" tip_link="tool0"/>
     </group>
+    <group name="gripper">
+        <joint name="robotiq_85_left_knuckle_joint"/>
+    </group>
     <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="open" group="gripper">
+        <joint name="robotiq_85_left_knuckle_joint" value="0"/>
+    </group_state>
+    <group_state name="closed" group="gripper">
+        <joint name="robotiq_85_left_knuckle_joint" value="0.8"/>
+    </group_state>
+    <!--END EFFECTOR: Purpose: Represent information about an end effector-->
+    <end_effector name="gripper" parent_link="tool0" group="gripper"/>
     <group_state name="home" group="ur_manipulator">
         <joint name="elbow_joint" value="0"/>
         <joint name="shoulder_lift_joint" value="0"/>
@@ -40,4 +51,108 @@
     <disable_collisions link1="wrist_1_link" link2="wrist_2_link" reason="Adjacent"/>
     <disable_collisions link1="wrist_1_link" link2="wrist_3_link" reason="Never"/>
     <disable_collisions link1="wrist_2_link" link2="wrist_3_link" reason="Adjacent"/>
+    <!-- ================================================================ -->
+    <!-- Gripper self-collisions: all 55 pairs within the 11 gripper links -->
+    <!-- ================================================================ -->
+    <!-- ur_to_robotiq_link (G1) vs all -->
+    <disable_collisions link1="ur_to_robotiq_link" link2="gripper_mount_link" reason="Adjacent"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_base_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_left_knuckle_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_right_knuckle_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_left_finger_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="ur_to_robotiq_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- gripper_mount_link (G2) vs remaining -->
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_base_link" reason="Adjacent"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_left_knuckle_link" reason="Never"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_right_knuckle_link" reason="Never"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_left_finger_link" reason="Never"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="gripper_mount_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- robotiq_85_base_link (G3) vs remaining -->
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_left_knuckle_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_right_knuckle_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_left_finger_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_left_inner_knuckle_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_right_inner_knuckle_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_base_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- robotiq_85_left_knuckle_link (G4) vs remaining -->
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="robotiq_85_right_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="robotiq_85_left_finger_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- robotiq_85_right_knuckle_link (G5) vs remaining -->
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="robotiq_85_left_finger_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="robotiq_85_right_finger_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- robotiq_85_left_finger_link (G6) vs remaining -->
+    <disable_collisions link1="robotiq_85_left_finger_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_finger_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_finger_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_finger_link" link2="robotiq_85_left_finger_tip_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_left_finger_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- robotiq_85_right_finger_link (G7) vs remaining -->
+    <disable_collisions link1="robotiq_85_right_finger_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_finger_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_finger_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_finger_link" link2="robotiq_85_right_finger_tip_link" reason="Adjacent"/>
+    <!-- robotiq_85_left_inner_knuckle_link (G8) vs remaining -->
+    <disable_collisions link1="robotiq_85_left_inner_knuckle_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_left_inner_knuckle_link" link2="robotiq_85_left_finger_tip_link" reason="Adjacent"/>
+    <disable_collisions link1="robotiq_85_left_inner_knuckle_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- robotiq_85_right_inner_knuckle_link (G9) vs remaining -->
+    <disable_collisions link1="robotiq_85_right_inner_knuckle_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="robotiq_85_right_inner_knuckle_link" link2="robotiq_85_right_finger_tip_link" reason="Adjacent"/>
+    <!-- robotiq_85_left_finger_tip_link (G10) vs remaining -->
+    <disable_collisions link1="robotiq_85_left_finger_tip_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <!-- ================================================================ -->
+    <!-- Gripper vs arm: all 11 gripper links × wrist_1, wrist_2, wrist_3 -->
+    <!-- ================================================================ -->
+    <disable_collisions link1="wrist_3_link" link2="ur_to_robotiq_link" reason="Adjacent"/>
+    <disable_collisions link1="wrist_3_link" link2="gripper_mount_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_base_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_left_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_right_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_left_finger_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="wrist_3_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="ur_to_robotiq_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="gripper_mount_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_base_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_left_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_right_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_left_finger_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="wrist_2_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="ur_to_robotiq_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="gripper_mount_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_base_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_left_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_right_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_left_finger_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_right_finger_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_left_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_right_inner_knuckle_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_left_finger_tip_link" reason="Never"/>
+    <disable_collisions link1="wrist_1_link" link2="robotiq_85_right_finger_tip_link" reason="Never"/>
 </robot>
