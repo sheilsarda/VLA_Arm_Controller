@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur5e">
-  
+
   <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
   <xacro:include filename="$(find ur_description)/urdf/inc/ur_joint_control.xacro"/>
+  <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
+  <xacro:include filename="$(find robotiq_description)/urdf/ur_to_robotiq_adapter.urdf.xacro"/>
 
   <link name="world"/>
+
+  <!-- UR5e arm -->
   <xacro:ur_robot
     name="ur5e"
     tf_prefix=""
@@ -16,15 +20,34 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:ur_robot>
 
+  <!-- UR-to-Robotiq adapter (physical coupler between tool0 and gripper) -->
+  <xacro:ur_to_robotiq prefix="" connected_to="tool0"/>
+
+  <!-- Robotiq 2F-85 gripper (ros2_control handled in main block below) -->
+  <xacro:robotiq_gripper
+    name="gripper"
+    prefix=""
+    parent="gripper_mount_link"
+    include_ros2_control="false">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:robotiq_gripper>
+
+  <!-- Single ros2_control block: arm + gripper via topic_based -->
   <ros2_control name="ur5e_isaac" type="system">
     <hardware>
       <plugin>topic_based_ros2_control/TopicBasedSystem</plugin>
       <param name="joint_commands_topic">/joint_commands</param>
       <param name="joint_states_topic">/joint_states</param>
     </hardware>
-    
-    <xacro:ur_joint_control_description 
-      tf_prefix=""/>
+
+    <xacro:ur_joint_control_description tf_prefix=""/>
+
+    <!-- Gripper: only the actuated joint; mimic joints follow automatically -->
+    <joint name="robotiq_85_left_knuckle_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
   </ros2_control>
-  
+
 </robot>
