@@ -7,8 +7,8 @@
                 double radius = 2.3150762557983398
             }
             dictionary Perspective = {
-                double3 position = (0.8769182637426026, 1.7509355426065834, 0.6404018558068729)
-                double3 target = (-0.1770967869697705, -0.0855669414744673, 0.027282720052287712)
+                double3 position = (0.553744785948173, 0.002516930181684446, 1.2616518454319892)
+                double3 target = (-2.491817730046173, 0.7673213033659134, -0.10262111146096253)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -40,142 +40,6 @@
 
 def Xform "World"
 {
-    over "ur5e" (
-        prepend references = @../urdf/ur5e_model/ur5e_model.usd@
-    )
-    {
-        string isaac:namespace (
-            displayName = "Namespace"
-            doc = "Namespace of the prim in Isaac Sim"
-        )
-
-        over "world" (
-            delete apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
-        )
-        {
-            string isaac:nameOverride (
-                displayName = "Name Override"
-                doc = "Name override for prim lookup in base name search"
-            )
-        }
-
-        over "base_link_inertia" (
-            delete apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
-            prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
-        )
-        {
-            string isaac:nameOverride (
-                displayName = "Name Override"
-                doc = "Name override for prim lookup in base name search"
-            )
-            bool physics:kinematicEnabled = 0
-            bool physics:rigidBodyEnabled = 1
-        }
-
-        over "shoulder_link"
-        {
-            string isaac:nameOverride (
-                displayName = "Name Override"
-                doc = "Name override for prim lookup in base name search"
-            )
-        }
-
-        over "upper_arm_link"
-        {
-            string isaac:nameOverride (
-                displayName = "Name Override"
-                doc = "Name override for prim lookup in base name search"
-            )
-        }
-
-        over "forearm_link"
-        {
-        }
-
-        over "wrist_1_link"
-        {
-            string isaac:nameOverride (
-                displayName = "Name Override"
-                doc = "Name override for prim lookup in base name search"
-            )
-        }
-
-        over "wrist_2_link"
-        {
-        }
-
-        over "wrist_3_link"
-        {
-        }
-
-        over "joints"
-        {
-            over "shoulder_pan_joint"
-            {
-                string isaac:nameOverride (
-                    displayName = "Name Override"
-                    doc = "Name override for prim lookup in base name search"
-                )
-                float state:angular:physics:position = 0
-                float state:angular:physics:velocity = 0
-            }
-
-            over "shoulder_lift_joint"
-            {
-                string isaac:nameOverride (
-                    displayName = "Name Override"
-                    doc = "Name override for prim lookup in base name search"
-                )
-                float state:angular:physics:position = 0
-                float state:angular:physics:velocity = 0
-            }
-
-            over "elbow_joint"
-            {
-                string isaac:nameOverride (
-                    displayName = "Name Override"
-                    doc = "Name override for prim lookup in base name search"
-                )
-                float state:angular:physics:position = 0
-                float state:angular:physics:velocity = 0
-            }
-
-            over "wrist_1_joint"
-            {
-                float state:angular:physics:position = 0
-                float state:angular:physics:velocity = 0
-            }
-
-            over "wrist_2_joint"
-            {
-                float state:angular:physics:position = 0
-                float state:angular:physics:velocity = 0
-            }
-
-            over "wrist_3_joint"
-            {
-                float state:angular:physics:position = 0
-                float state:angular:physics:velocity = 0
-            }
-
-            over "base_link_base_link_inertia" (
-                delete apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
-            )
-            {
-                string isaac:nameOverride (
-                    displayName = "Name Override"
-                    doc = "Name override for prim lookup in base name search"
-                )
-            }
-        }
-
-        over "root_joint" (
-            delete apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
-        )
-        {
-        }
-    }
-
     def Xform "GroundPlane"
     {
         quatf xformOp:orient = (1, 0, 0, 0)
@@ -209,13 +73,248 @@ def Xform "World"
         }
     }
 
-    def OmniGraph "ActionGraph"
+    over "ur5e" (
+        prepend references = @/home/sheil/Development/VLA_Arm_Controller/urdf/ur5e_with_gripper/ur5e_with_gripper.usd@
+    )
     {
-        token evaluationMode = "Automatic"
-        token evaluator:type = "execution"
-        token fabricCacheBacking = "StageWithoutHistory"
-        int2 fileFormatVersion = (1, 9)
-        token pipelineStage = "pipelineStageSimulation"
+        string isaac:namespace (
+            displayName = "Namespace"
+            doc = "Namespace of the prim in Isaac Sim"
+        )
+
+        over "world"
+        {
+        }
+
+        over "base_link_inertia"
+        {
+        }
+
+        over "shoulder_link"
+        {
+        }
+
+        over "upper_arm_link"
+        {
+        }
+
+        over "forearm_link"
+        {
+        }
+
+        over "wrist_1_link"
+        {
+        }
+
+        over "wrist_2_link"
+        {
+        }
+
+        over "wrist_3_link"
+        {
+        }
+
+        over "ur_to_robotiq_link"
+        {
+        }
+
+        over "robotiq_85_base_link"
+        {
+        }
+
+        over "robotiq_85_left_inner_knuckle_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "robotiq_85_left_knuckle_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "robotiq_85_left_finger_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "robotiq_85_left_finger_tip_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "robotiq_85_right_inner_knuckle_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "robotiq_85_right_knuckle_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "robotiq_85_right_finger_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "robotiq_85_right_finger_tip_link"
+        {
+            string isaac:nameOverride (
+                displayName = "Name Override"
+                doc = "Name override for prim lookup in base name search"
+            )
+        }
+
+        over "joints"
+        {
+            over "shoulder_pan_joint"
+            {
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "shoulder_lift_joint"
+            {
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "elbow_joint"
+            {
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "wrist_1_joint"
+            {
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "wrist_2_joint"
+            {
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "wrist_3_joint"
+            {
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "robotiq_85_left_knuckle_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "robotiq_85_right_knuckle_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
+                float state:angular:physics:position = 0
+                float state:angular:physics:velocity = 0
+            }
+
+            over "robotiq_85_left_inner_knuckle_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
+            }
+
+            over "robotiq_85_right_inner_knuckle_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
+            }
+
+            over "robotiq_85_base_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+            }
+
+            over "robotiq_85_left_finger_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+            }
+
+            over "robotiq_85_left_finger_tip_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
+            }
+
+            over "robotiq_85_right_finger_joint"
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+            }
+
+            over "robotiq_85_right_finger_tip_joint" (
+                prepend apiSchemas = ["PhysxMimicJointAPI:rotX"]
+            )
+            {
+                string isaac:nameOverride (
+                    displayName = "Name Override"
+                    doc = "Name override for prim lookup in base name search"
+                )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
+                float physxMimicJoint:rotX:gearing = 1
+                rel physxMimicJoint:rotX:referenceJoint = </World/ur5e/joints/robotiq_85_left_knuckle_joint>
+                uniform token physxMimicJoint:rotX:referenceJointAxis = "rotX"
+            }
+        }
     }
 }
 
@@ -280,7 +379,7 @@ def "Render" (
                 uint omni:rtx:viewTile:limit = 4294967295
                 rel orderedVars = </Render/Vars/LdrColor>
                 custom bool overrideClipRange = 0
-                uniform int2 resolution = (1280, 720)
+                uniform int2 resolution = (1091, 454)
             }
         }
     }
@@ -498,51 +597,6 @@ def OmniGraph "ActionGraph"
         custom double outputs:simulationTime
         uniform token ui:nodegraph:node:expansionState = "open"
         uniform float2 ui:nodegraph:node:pos = (-861.0775, -268.9546)
-    }
-}
-
-def "Graph"
-{
-    def OmniGraph "ROS_JointStates"
-    {
-        token evaluationMode = "Automatic"
-        token evaluator:type = "execution"
-        token fabricCacheBacking = "StageWithoutHistory"
-        int2 fileFormatVersion = (1, 9)
-        token pipelineStage = "pipelineStageSimulation"
-
-        def OmniGraphNode "OnPlaybackTick"
-        {
-            token node:type = "omni.graph.action.OnPlaybackTick"
-            int node:typeVersion = 2
-            custom double outputs:deltaSeconds
-            custom double outputs:frame
-            custom uint outputs:tick (
-                customData = {
-                    bool isExecution = 1
-                }
-            )
-            custom double outputs:time
-        }
-
-        def OmniGraphNode "Context"
-        {
-            custom uchar inputs:domain_id
-            custom bool inputs:useDomainIDEnvVar
-            token node:type = "isaacsim.ros2.bridge.ROS2Context"
-            int node:typeVersion = 2
-            custom uint64 outputs:context
-        }
-
-        def OmniGraphNode "ReadSimTime"
-        {
-            custom uint64 inputs:referenceTimeDenominator
-            custom int64 inputs:referenceTimeNumerator
-            custom bool inputs:resetOnStop = 0
-            token node:type = "isaacsim.core.nodes.IsaacReadSimulationTime"
-            int node:typeVersion = 1
-            custom double outputs:simulationTime
-        }
     }
 }
 
