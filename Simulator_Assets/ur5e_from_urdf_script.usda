@@ -7,8 +7,8 @@
                 double radius = 2.3150762557983398
             }
             dictionary Perspective = {
-                double3 position = (0.553744785948173, 0.002516930181684446, 1.2616518454319892)
-                double3 target = (-2.491817730046173, 0.7673213033659134, -0.10262111146096253)
+                double3 position = (1.236922099582017, 5.876533024872652, 2.342525554452723)
+                double3 target = (0.6184094338233211, 1.4318001674900689, 1.010514970386199)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -18,7 +18,7 @@
                 double3 position = (0, 0, 5)
                 double radius = 5
             }
-            string boundCamera = "/OmniverseKit_Persp"
+            string boundCamera = "/World/Sensors/base_camera"
         }
         dictionary omni_layer = {
             string authoring_layer = "./ur5e_from_urdf_script.usda"
@@ -73,6 +73,26 @@ def Xform "World"
         }
     }
 
+    def Xform "Sensors"
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Camera "base_camera"
+        {
+            float2 clippingRange = (0.01, 1000)
+            float focalLength = 14
+            float horizontalAperture = 20.955
+            custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -1.9614624668238025)
+            float verticalAperture = 20.955
+            token visibility = "inherited"
+            quatd xformOp:orient = (0.9181172847747803, 0.30719778239593726, 0.23744133345061808, -0.0794467561200319)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0.62, -0.78, 1.2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        }
+    }
+
     over "ur5e" (
         prepend references = @/home/sheil/Development/VLA_Arm_Controller/urdf/ur5e_with_gripper/ur5e_with_gripper.usd@
     )
@@ -112,6 +132,19 @@ def Xform "World"
 
         over "wrist_3_link"
         {
+            def Camera "wrist_camera"
+            {
+                float2 clippingRange = (0.01, 1000)
+                float focalLength = 8
+                float horizontalAperture = 20.955
+                custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -0.45)
+                float verticalAperture = 20.955
+                token visibility = "inherited"
+                float3 xformOp:rotateXYZ = (110, 0, -180)
+                double3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0.1, 0.12)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
         }
 
         over "ur_to_robotiq_link"
@@ -257,12 +290,21 @@ def Xform "World"
                 uniform token physxMimicJoint:rotY:referenceJointAxis = "rotY"
             }
 
-            over "robotiq_85_right_inner_knuckle_joint"
+            over "robotiq_85_right_inner_knuckle_joint" (
+                delete apiSchemas = ["PhysxMimicJointAPI:rotY"]
+                prepend apiSchemas = ["PhysxMimicJointAPI:rotY"]
+            )
             {
                 string isaac:nameOverride (
                     displayName = "Name Override"
                     doc = "Name override for prim lookup in base name search"
                 )
+                float physics:lowerLimit = -47
+                float physics:upperLimit = 47
+                float physxMimicJoint:rotY:gearing = 1
+                float physxMimicJoint:rotY:offset = 0
+                rel physxMimicJoint:rotY:referenceJoint = </World/ur5e/joints/robotiq_85_left_knuckle_joint>
+                uniform token physxMimicJoint:rotY:referenceJointAxis = "rotY"
             }
 
             over "robotiq_85_base_joint"
@@ -303,6 +345,8 @@ def Xform "World"
                     displayName = "Name Override"
                     doc = "Name override for prim lookup in base name search"
                 )
+                rel physxMimicJoint:rotY:referenceJoint = </World/ur5e/joints/robotiq_85_left_knuckle_joint>
+                uniform token physxMimicJoint:rotY:referenceJointAxis = "rotY"
             }
         }
     }
@@ -351,7 +395,7 @@ def "Render" (
                 no_delete = true
             )
             {
-                rel camera = </OmniverseKit_Persp>
+                rel camera = </World/ur5e/wrist_3_link/wrist_camera>
                 token omni:rtx:background:source:texture:textureMode = "repeatMirrored"
                 token omni:rtx:background:source:type = "domeLight"
                 bool omni:rtx:material:db:nonVisualMaterialCSV:enabled = 0
@@ -369,7 +413,55 @@ def "Render" (
                 uint omni:rtx:viewTile:limit = 4294967295
                 rel orderedVars = </Render/Vars/LdrColor>
                 custom bool overrideClipRange = 0
-                uniform int2 resolution = (1091, 454)
+                uniform int2 resolution = (613, 738)
+            }
+
+            def RenderProduct "base_camera_render_product" (
+                hide_in_stage_window = true
+                no_delete = true
+            )
+            {
+                rel camera = </World/Sensors/base_camera>
+                uniform int2 resolution = (640, 480)
+            }
+
+            def RenderProduct "wrist_camera_render_product" (
+                hide_in_stage_window = true
+                no_delete = true
+            )
+            {
+                rel camera = </World/ur5e/wrist_3_link/wrist_camera>
+                uniform int2 resolution = (640, 480)
+            }
+
+            def RenderProduct "omni_kit_widget_viewport_ViewportTexture_1" (
+                prepend apiSchemas = ["OmniRtxSettingsCommonAdvancedAPI_1", "OmniRtxSettingsRtAdvancedAPI_1", "OmniRtxSettingsPtAdvancedAPI_1", "OmniRtxPostColorGradingAPI_1", "OmniRtxPostChromaticAberrationAPI_1", "OmniRtxPostBloomPhysicalAPI_1", "OmniRtxPostMatteObjectAPI_1", "OmniRtxPostCompositingAPI_1", "OmniRtxPostDofAPI_1", "OmniRtxPostMotionBlurAPI_1", "OmniRtxPostTvNoiseAPI_1", "OmniRtxPostTonemapIrayReinhardAPI_1", "OmniRtxPostDebugSettingsAPI_1", "OmniRtxDebugSettingsAPI_1"]
+                hide_in_stage_window = true
+                no_delete = true
+            )
+            {
+                rel camera = </World/Sensors/base_camera>
+                token omni:rtx:background:source:texture:textureMode = "repeatMirrored"
+                token omni:rtx:background:source:type = "domeLight"
+                bool omni:rtx:dlss:frameGeneration = 0
+                bool omni:rtx:material:db:nonVisualMaterialCSV:enabled = 0
+                bool omni:rtx:material:db:syncLoads = 1
+                token omni:rtx:post:dlss:execMode = "performance"
+                bool omni:rtx:post:registeredCompositing:invertColorCorrection = 1
+                bool omni:rtx:post:registeredCompositing:invertToneMap = 1
+                bool omni:rtx:pt:lightcache:cached:dontResolveConflicts = 1
+                int omni:rtx:pt:maxSamplesPerLaunch = 2073600
+                int omni:rtx:pt:mgpu:maxPixelsPerRegionExponent = 12
+                color3f omni:rtx:rt:ambientLight:color = (0.1, 0.1, 0.1)
+                bool omni:rtx:rt:demoire = 0
+                bool omni:rtx:rt:ecoMode:enabled
+                bool omni:rtx:rt:lightcache:spatialCache:dontResolveConflicts = 1
+                bool omni:rtx:scene:hydra:materialSyncLoads = 1
+                bool omni:rtx:scene:hydra:mdlMaterialWarmup = 1
+                uint omni:rtx:viewTile:limit = 4294967295
+                rel orderedVars = </Render/Vars/LdrColor>
+                custom bool overrideClipRange = 0
+                uniform int2 resolution = (1280, 720)
             }
         }
     }
@@ -379,7 +471,12 @@ def "Render" (
         no_delete = true
     )
     {
-        rel products = </Render/OmniverseKit/HydraTextures/omni_kit_widget_viewport_ViewportTexture_0>
+        rel products = [
+            </Render/OmniverseKit/HydraTextures/omni_kit_widget_viewport_ViewportTexture_0>,
+            </Render/OmniverseKit/HydraTextures/base_camera_render_product>,
+            </Render/OmniverseKit/HydraTextures/wrist_camera_render_product>,
+            </Render/OmniverseKit/HydraTextures/omni_kit_widget_viewport_ViewportTexture_1>,
+        ]
     }
 
     def "Vars"
@@ -588,5 +685,35 @@ def OmniGraph "ActionGraph"
         uniform token ui:nodegraph:node:expansionState = "open"
         uniform float2 ui:nodegraph:node:pos = (-861.0775, -268.9546)
     }
+}
+
+over "OmniverseKit_Persp"
+{
+    custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -4.681074693621701)
+    float verticalAperture = 20.955
+    quatd xformOp:orient = (0.055361490696668625, 0.04131624475121498, 0.596671462059021, 0.7995069026947021)
+    double3 xformOp:translate = (0.38682079315185547, 4.1905412673950195, 2.0499253273010254)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+}
+
+over "OmniverseKit_Front"
+{
+    quatd xformOp:orient = (0.5, 0.5, 0.5, 0.5)
+    double3 xformOp:translate = (5, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+}
+
+over "OmniverseKit_Top"
+{
+    quatd xformOp:orient = (-0.7071067690849304, 1.2180242460777213e-16, -3.520682188222904e-17, 0.7071067690849304)
+    double3 xformOp:translate = (0, 0, 5)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+}
+
+over "OmniverseKit_Right"
+{
+    quatd xformOp:orient = (0.7071067690849304, 0.7071067690849304, 7.850462159063936e-17, 7.850462159063936e-17)
+    double3 xformOp:translate = (0, -5, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 }
 

@@ -159,6 +159,25 @@ Two cameras needed, each with an OmniGraph ROS2 Image publisher in the USD scene
 | Base | `/camera/image_raw` | Fixed — overhead or angled workspace view |
 | Wrist | `/camera_wrist/image_raw` | `tool0` link — moves with arm |
 
+### Camera Viewpoint Decision (Initial)
+
+Use a **right-oblique exterior camera** as the default base camera mapping to `base_0_rgb`.
+
+Rationale:
+- `sim-evals` `droid_jointpos.py` feeds `right_image` into `observation/exterior_image_1_left`.
+- This is closer to a side/oblique DROID-like viewpoint than a top-down camera.
+- It usually preserves both object geometry and gripper approach direction better than overhead-only views.
+
+Recommended first pose (world frame, tune in Isaac viewport):
+- Base camera position: `(x=0.80, y=-0.55, z=0.75)`
+- Look-at target: `(x=0.45, y=0.00, z=0.08)`
+- FOV target: `60-75 deg` horizontal
+
+Wrist camera mount reference:
+- Parent: `tool0` (URDF comment: tool0 axes are `X+ left, Y+ up, Z+ front`)
+- Start offset from `tool0`: `(x=0.00, y=0.02, z=0.07)` meters
+- Point optical axis roughly along gripper forward direction (`tool0 +Z`) with slight downward pitch.
+
 ---
 
 ## Work Phases
@@ -192,14 +211,20 @@ Two cameras needed, each with an OmniGraph ROS2 Image publisher in the USD scene
 
 Verify or add the two cameras in the USD scene.
 
-- If cameras already exist as OmniGraph publishers: verify topic names and that images are being published at runtime.
-- If not: add `Camera` prims at appropriate positions, connect each to an OmniGraph `ROS2PublishImage` node.
+- Current status in this repo: top-level stage has no dedicated ROS image camera nodes yet (only viewport camera `/OmniverseKit_Persp`), so we should add both base+wrist cameras.
+- Add `Camera` prims at the poses above and connect each to an OmniGraph `ROS2PublishImage` node.
+- If cameras already exist in a different loaded layer at runtime, verify topic names and remap to the expected topics.
 
 Validate with:
 ```bash
 ros2 topic echo /camera/image_raw --once
 ros2 topic echo /camera_wrist/image_raw --once
 ```
+
+Camera acceptance checks (before training/fine-tuning):
+- Base camera sees full manipulation zone and at least one gripper fingertip at nominal start pose.
+- Wrist camera sees fingertips + near-object region without severe clipping.
+- Across a short scripted motion, both streams stay informative (no persistent self-occlusion / no blank frames).
 
 ### Phase 3 — Image Bridge (`image_bridge.py`)
 
@@ -365,7 +390,7 @@ uv run scripts/serve_policy.py policy:checkpoint \
 | 3 | GPU available on inference machine? (Ampere+ recommended) | Phase 1 latency |
 | 4 | Will zero-shot pi0 (after custom UR5 config) generalize to Isaac Sim visuals? | Determines if Phase 8 is needed |
 | 5 | openpi server on same machine as Isaac Sim, or remote? | Network config in vla_params.yaml |
-| 6 | Which base camera viewpoint should map to the model’s “exterior” slot for best transfer? | Data collection + inference consistency |
+| 6 | Is right-oblique base view (chosen default) sufficient, or should we keep a left-oblique fallback profile? | Data collection + inference consistency |
 
 ---
 
