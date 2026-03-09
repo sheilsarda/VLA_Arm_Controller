@@ -54,32 +54,20 @@ ros2 launch ur5e_isaac_moveit_config controller_v1.launch.py
 
 Use two terminals.
 
-Terminal 1: start the OpenPI inference server from the `openpi` repo:
+##### Terminal 1: start the OpenPI inference server from the `openpi` repo:
 
 ````sh
 cd /home/sheil/Development/openpi
 uv run scripts/serve_policy.py --env=DROID
 ````
 
-Equivalent explicit command:
-
-````sh
-cd /home/sheil/Development/openpi
-uv run scripts/serve_policy.py policy:checkpoint \
-  --policy.config=pi05_droid \
-  --policy.dir=gs://openpi-assets/checkpoints/pi05_droid
-````
-
-Terminal 2: build and launch the ROS2 side (controller manager + spawners + VLA bridge, no `move_group`):
+##### Terminal 2: build and launch the full ROS2 side (controller manager + spawners + VLA bridge, no `move_group`):
 
 ````sh
 cd /home/sheil/Development/VLA_Arm_Controller
+source .venv/bin/activate
 source /opt/ros/jazzy/setup.bash
-
-# Required once in the same Python environment used by ros2 launch:
-pip install /home/sheil/Development/openpi/packages/openpi-client
-
-colcon build
+colcon build --packages-select vla_controller
 source install/setup.bash
 
 ros2 launch vla_controller vla_system.launch.py \
@@ -88,7 +76,7 @@ ros2 launch vla_controller vla_system.launch.py \
   openpi_port:=8000
 ````
 
-If you want to launch only the bridge node (assuming controllers are already running elsewhere):
+**Appendix: If controllers are already running in another terminal/session, launch only the bridge node:**
 
 ````sh
 ros2 launch vla_controller vla.launch.py \
@@ -97,9 +85,16 @@ ros2 launch vla_controller vla.launch.py \
   openpi_port:=8000
 ````
 
-Quick checks before running the bridge:
+##### Runtime health logging (stdout)
 
-````sh
-ros2 topic list | grep camera
-ros2 topic echo /joint_states --once
-````
+`vla_controller_node` prints:
+- periodic health snapshots
+- OpenPI packet receive/fail/invalid counters and latency
+- action chunk generated/sent/dropped counters
+- action server readiness transitions
+- goal success/reject/error counters
+
+Tune verbosity in `src/vla_controller/config/vla_params.yaml`:
+- `health_log_period_sec` (`0` disables heartbeat)
+- `log_inference_packets`
+- `log_action_chunks`

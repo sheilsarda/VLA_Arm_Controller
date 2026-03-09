@@ -16,6 +16,9 @@ vla_controller_node:
     open_loop_horizon: 5
     waypoint_dt: 0.1
     dry_run: false
+    health_log_period_sec: 2.0
+    log_inference_packets: true
+    log_action_chunks: true
 
     joint_names:
       - shoulder_pan_joint
