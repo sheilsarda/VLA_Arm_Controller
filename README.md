@@ -50,3 +50,52 @@ ros2 launch ur5e_isaac_moveit_config controller_v1.launch.py
   109  ros2 control list_hardware_interfaces
 ````
 
+#### VLA Controller (OpenPI + ROS2 Bridge)
+
+Use two terminals.
+
+Terminal 1: start the OpenPI inference server from the `openpi` repo:
+
+````sh
+cd /home/sheil/Development/openpi
+uv run scripts/serve_policy.py --env=DROID
+````
+
+Equivalent explicit command:
+
+````sh
+cd /home/sheil/Development/openpi
+uv run scripts/serve_policy.py policy:checkpoint \
+  --policy.config=pi05_droid \
+  --policy.dir=gs://openpi-assets/checkpoints/pi05_droid
+````
+
+Terminal 2: build and launch the ROS2 side (controller manager + spawners + VLA bridge, no `move_group`):
+
+````sh
+cd /home/sheil/Development/VLA_Arm_Controller
+source /opt/ros/jazzy/setup.bash
+colcon build
+source install/setup.bash
+
+ros2 launch vla_controller vla_system.launch.py \
+  task:="pick up the block" \
+  openpi_host:=localhost \
+  openpi_port:=8000
+````
+
+If you want to launch only the bridge node (assuming controllers are already running elsewhere):
+
+````sh
+ros2 launch vla_controller vla.launch.py \
+  task:="pick up the block" \
+  openpi_host:=localhost \
+  openpi_port:=8000
+````
+
+Quick checks before running the bridge:
+
+````sh
+ros2 topic list | grep camera
+ros2 topic echo /joint_states --once
+````
