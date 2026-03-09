@@ -1,4 +1,5 @@
 import os
+import sys
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -9,6 +10,26 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launches import generate_spawn_controllers_launch
+
+
+def _venv_pythonpath_env() -> dict:
+    venv = os.environ.get("VIRTUAL_ENV")
+    if not venv:
+        return {}
+
+    site_packages = os.path.join(
+        venv,
+        "lib",
+        f"python{sys.version_info.major}.{sys.version_info.minor}",
+        "site-packages",
+    )
+    if not os.path.isdir(site_packages):
+        return {}
+
+    current_pythonpath = os.environ.get("PYTHONPATH", "")
+    if current_pythonpath:
+        return {"PYTHONPATH": f"{site_packages}:{current_pythonpath}"}
+    return {"PYTHONPATH": site_packages}
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -75,6 +96,7 @@ def generate_launch_description() -> LaunchDescription:
         package="vla_controller",
         executable="vla_controller_node",
         output="screen",
+        additional_env=_venv_pythonpath_env(),
         parameters=[
             LaunchConfiguration("params_file"),
             {

@@ -7,13 +7,23 @@ import numpy as np
 from builtin_interfaces.msg import Duration
 from control_msgs.action import FollowJointTrajectory
 from cv_bridge import CvBridge
-from openpi_client import image_tools
-from openpi_client import websocket_client_policy
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from sensor_msgs.msg import Image, JointState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+try:
+    from openpi_client import image_tools
+    from openpi_client import websocket_client_policy
+except ModuleNotFoundError as exc:
+    if exc.name == "openpi_client":
+        raise ModuleNotFoundError(
+            "Missing Python package 'openpi_client'. Install it in the same Python "
+            "environment used by ROS2 launch, for example:\n"
+            "  pip install -e /home/sheil/Development/openpi/packages/openpi-client"
+        ) from exc
+    raise
 
 
 class VLAControllerNode(Node):

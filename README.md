@@ -75,6 +75,10 @@ Terminal 2: build and launch the ROS2 side (controller manager + spawners + VLA 
 ````sh
 cd /home/sheil/Development/VLA_Arm_Controller
 source /opt/ros/jazzy/setup.bash
+
+# Required once in the same Python environment used by ros2 launch:
+pip install /home/sheil/Development/openpi/packages/openpi-client
+
 colcon build
 source install/setup.bash
 
