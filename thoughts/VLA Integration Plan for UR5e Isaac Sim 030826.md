@@ -18,6 +18,12 @@ Reference: `examples/ur5/` in the openpi repo
 - `pi0_base` is a checkpoint path, not a runnable config name for `serve_policy.py`.
 - `openpi/examples/ur5/README.md` is a template/guide; it does not ship a ready UR5 policy config or a ready `convert_ur5_data_to_lerobot.py` script.
 
+## Bridge Simplification (March 9, 2026)
+
+- The ROS2 bridge now uses a **single observation schema**: DROID-compatible keys.
+- We intentionally removed runtime schema switching (`droid|ur5|direct`) to reduce bring-up/debug complexity.
+- Once a local `pi0_ur5` config exists in our openpi fork, we can reintroduce a UR5-native schema behind a clean feature flag.
+
 ## Insights from `sim-evals` (`droid_jointpos.py`)
 
 From `arhanjain/sim-evals` ([`src/sim_evals/inference/droid_jointpos.py`](https://github.com/arhanjain/sim-evals/blob/main/src/sim_evals/inference/droid_jointpos.py)), we should adopt:
@@ -69,14 +75,14 @@ Isaac Sim
 
 ## Key Observation / Action Format
 
-### Observation sent to server
+### Observation sent to server (single schema)
 
 | Key | Shape | dtype | Source |
 |-----|-------|-------|--------|
-| `base_0_rgb` | (224, 224, 3) | uint8 | `/camera/image_raw` |
-| `left_wrist_0_rgb` | (224, 224, 3) | uint8 | `/camera_wrist/image_raw` |
-| `right_wrist_0_rgb` | (224, 224, 3) | uint8 | zeros (UR5e has one wrist cam) |
-| `state` | (7,) | float32 | joints[0:6] + gripper[0:1] from `/joint_states` |
+| `observation/exterior_image_1_left` | (224, 224, 3) | uint8 | `/camera/image_raw` |
+| `observation/wrist_image_left` | (224, 224, 3) | uint8 | `/camera_wrist/image_raw` |
+| `observation/joint_position` | (7,) | float32 | joints[0:6] + one padded zero |
+| `observation/gripper_position` | (1,) | float32 | gripper from `/joint_states` |
 | `prompt` | str | — | task instruction ROS param |
 
 ### Action returned by server
@@ -161,7 +167,7 @@ Two cameras needed, each with an OmniGraph ROS2 Image publisher in the USD scene
 
 ### Camera Viewpoint Decision (Initial)
 
-Use a **right-oblique exterior camera** as the default base camera mapping to `base_0_rgb`.
+Use a **right-oblique exterior camera** as the default base camera mapping to `observation/exterior_image_1_left`.
 
 Rationale:
 - `sim-evals` `droid_jointpos.py` feeds `right_image` into `observation/exterior_image_1_left`.
@@ -278,10 +284,10 @@ Main loop (configurable rate, default 2 Hz):
   1. Grab latest base + wrist images
   2. Read current joint positions[0:6] + gripper[0:1] from /joint_states
   3. If `actions_from_chunk_completed == 0` or `>= open_loop_horizon`, pack observation:
-       base_0_rgb        = image_bridge.convert(base_image)
-       left_wrist_0_rgb  = image_bridge.convert(wrist_image)
-       right_wrist_0_rgb = np.zeros((224,224,3), np.uint8)
-       state             = np.array([*joints, gripper], np.float32)
+       observation/exterior_image_1_left = image_bridge.convert(base_image)
+       observation/wrist_image_left      = image_bridge.convert(wrist_image)
+       observation/joint_position        = np.array([*joints, 0.0], np.float32)
+       observation/gripper_position      = np.array([gripper], np.float32)
        prompt            = task_instruction
   4. If refresh needed: `client.infer(obs) -> pred_action_chunk`
   5. Consume next action (or short sub-chunk) from `pred_action_chunk`
