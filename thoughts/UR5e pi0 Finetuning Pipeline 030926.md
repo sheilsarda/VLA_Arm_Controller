@@ -6,7 +6,7 @@
 
 ## Goal
 
-Fine-tune a `pi0` policy on UR5e Isaac Sim demonstrations so the VLA acts correctly on our robot. The off-the-shelf `pi05_droid` model produces nonsensical motions because it was trained on Franka EEF-velocity actions in a different visual domain — fine-tuning on our own data is required.
+Validate the full fine-tuning pipeline end-to-end using a simple vertical arm motion task ("move the arm up and down"). No object manipulation — this is a pipeline proof-of-concept. Once the loop works (record → convert → train → serve → control), it can be repeated for any real task.
 
 ---
 
@@ -24,11 +24,11 @@ Fine-tune a `pi0` policy on UR5e Isaac Sim demonstrations so the VLA acts correc
 ## Pipeline Overview
 
 ```
-Isaac Sim (scripted motions)
+Isaac Sim (human teleop via MoveIt)
         │
-        │  ros2 bag record
+        │  ros2 bag record  (bashrc alias: record_episode <id>)
         ▼
-ROS2 Bag files  (.db3 / .mcap)
+ROS2 Bag files  (.db3 / .mcap)  →  training_data/episode_<id>/
   /camera/image_raw
   /camera_wrist/image_raw
   /joint_states
@@ -41,6 +41,10 @@ LeRobot Dataset (local or HuggingFace Hub)
   joint_position         (6,) float32
   gripper_position       (1,) float32
   actions                (7,) float32  [Δj0..j5 | gripper_abs]
+        │
+        │  LERO  (episode curation — delete bad demos, visual inspection)
+        ▼
+Curated LeRobot Dataset
         │
         │  compute_norm_stats.py + train.py
         ▼
@@ -59,7 +63,6 @@ openpi inference server  →  vla_controller_node  →  Isaac Sim
 
 | File | Location | Purpose |
 |---|---|---|
-| `record_episode.sh` | `VLA_Arm_Controller/scripts/` | Wrapper around `ros2 bag record` with correct topics |
 | `convert_ur5_bag_to_lerobot.py` | `openpi/examples/ur5/` | Reads bags, syncs at 10 Hz, writes LeRobot dataset |
 | `ur5_policy.py` | `openpi/src/openpi/policies/` | UR5-specific Inputs/Outputs transforms |
 
@@ -73,21 +76,22 @@ openpi inference server  →  vla_controller_node  →  Isaac Sim
 
 ## Step-by-Step Plan
 
-### Step 1 — Record Episodes (`record_episode.sh`)
+### Step 1 — Record Episodes
 
-Script wraps `ros2 bag record` for the three relevant topics:
+No dedicated script. Use two terminals:
+
+- **Terminal 1:** run the MoveIt teleop controller and move the arm up and down vertically
+- **Terminal 2:** start/stop the bag around each attempt
 
 ```bash
-ros2 bag record \
-  /camera/image_raw \
-  /camera_wrist/image_raw \
-  /joint_states \
-  -o "$OUTPUT_DIR/episode_$EPISODE_ID"
+record_episode 001
 ```
 
-- Run the scripted MoveIt pick-and-place controller simultaneously.
-- Start/stop the bag manually (Ctrl+C) or via a trigger topic.
-- **Target:** 50–100 episodes, 15–30 s each, single task ("pick up the block").
+(`record_episode` is a `~/.bashrc` function — see README.)
+
+- **Target:** 20–30 episodes, 5–10 s each (one or two full up-down cycles).
+- Bags are written to `VLA_Arm_Controller/training_data/` (gitignored).
+- Only record clean attempts; discard anything that looks wrong before stopping the bag.
 
 ### Step 2 — Convert Bags to LeRobot (`convert_ur5_bag_to_lerobot.py`)
 
@@ -119,11 +123,21 @@ Dataset features schema:
 CLI usage:
 ```bash
 uv run examples/ur5/convert_ur5_bag_to_lerobot.py \
-    --bags-dir /path/to/bags \
+    --bags-dir ~/Development/VLA_Arm_Controller/training_data \
     --repo-id your_hf_username/ur5_isaac_sim_v1 \
-    --task "pick up the block" \
+    --task "move the arm up and down" \
     [--output-fps 10] \
     [--push-to-hub]
+```
+
+### Step 2b — Curate Dataset with LERO
+
+Install: `pip install lero`
+
+Use LERO's interactive GUI to visually inspect episodes and delete any bad ones before training.
+
+```bash
+lero gui --dataset your_hf_username/ur5_isaac_sim_v1
 ```
 
 ### Step 3 — `ur5_policy.py`
@@ -168,7 +182,7 @@ TrainConfig(
     weight_loader=weight_loaders.CheckpointWeightLoader(
         "gs://openpi-assets/checkpoints/pi0_base/params"
     ),
-    num_train_steps=20_000,
+    num_train_steps=5_000,
     batch_size=32,
 ),
 ```
@@ -188,18 +202,18 @@ Writes stats to `./assets/ur5e/`.
 
 ```bash
 XLA_PYTHON_CLIENT_MEM_FRACTION=0.9 uv run scripts/train.py pi0_ur5 \
-    --exp-name=ur5_isaac_pick_v1
+    --exp-name=ur5_isaac_vertical_v1
 ```
 
-- Checkpoint interval: 5 000 steps.
-- Evaluate at 10 k and 20 k steps by serving the checkpoint and running a live episode.
+- Checkpoint interval: 1 000 steps.
+- Evaluate at 2–5k steps — the task is simple enough that it should work quickly if the pipeline is correct.
 
 ### Step 7 — Serve Fine-Tuned Model
 
 ```bash
 uv run scripts/serve_policy.py policy:checkpoint \
     --policy.config=pi0_ur5 \
-    --policy.dir=checkpoints/pi0_ur5/ur5_isaac_pick_v1/20000
+    --policy.dir=checkpoints/pi0_ur5/ur5_isaac_vertical_v1/5000
 ```
 
 Update `vla_params.yaml`: set `action_mode: delta` (instead of `velocity`).
@@ -209,8 +223,8 @@ Update `vla_params.yaml`: set `action_mode: delta` (instead of `velocity`).
 ## Dependencies
 
 ```bash
-# Converter (outside ROS2 env)
-pip install rosbags lerobot tyro opencv-python tqdm
+# Converter + curation (outside ROS2 env)
+pip install rosbags lerobot lero tyro opencv-python tqdm
 
 # openpi server (existing uv env)
 # No new deps — ur5_policy.py uses only existing openpi internals
@@ -223,18 +237,17 @@ pip install rosbags lerobot tyro opencv-python tqdm
 | # | Question | Impact |
 |---|---|---|
 | 1 | What resolution does Isaac Sim publish images at? | Affects storage size per episode; converter resizes to 320×240 anyway |
-| 2 | Is 50 episodes enough for pi0 fine-tune? | May need 100–200; start small and evaluate |
-| 3 | Gripper joint name in Isaac /joint_states? | Must match `gripper_joint` in `vla_params.yaml` and converter `--gripper-joint` arg |
-| 4 | Does Isaac Sim bag record at stable rate? | May need to drop frames with large time gaps |
-| 5 | Action horizon: 16 or shorter? | Shorter = more re-inference, more responsive; start with 16 |
+| 2 | Gripper joint name in Isaac /joint_states? | Must match `gripper_joint` in `vla_params.yaml` and converter `--gripper-joint` arg |
+| 3 | Does Isaac Sim bag record at stable rate? | May need to drop frames with large time gaps |
+| 4 | Action horizon: 16 or shorter? | Shorter = more re-inference, more responsive; start with 16 |
 
 ---
 
 ## Suggested Implementation Order
 
-1. `record_episode.sh` — collect first 10 test episodes
+1. Collect 20–30 episodes with `record_episode <id>`
 2. `convert_ur5_bag_to_lerobot.py` — validate dataset shape/content
-3. `ur5_policy.py` + `LeRobotUR5DataConfig` + `pi0_ur5` TrainConfig
-4. `compute_norm_stats.py`
-5. Fine-tune at 10 k steps, evaluate live
-6. Iterate: more data or more steps as needed
+3. Curate with LERO, delete any bad episodes
+4. `ur5_policy.py` + `LeRobotUR5DataConfig` + `pi0_ur5` TrainConfig
+5. `compute_norm_stats.py`
+6. Fine-tune, evaluate live at 2–5k steps

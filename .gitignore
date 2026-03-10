@@ -63,6 +63,9 @@ CATKIN_IGNORE
 # Point Cloud Data
 *.pcd
 
+# Training data (ROS2 bags, not for version control)
+training_data/
+
 # Planning (if applicable)
 /planning/cfg
 /planning/docs

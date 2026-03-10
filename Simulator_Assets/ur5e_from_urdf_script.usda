@@ -7,8 +7,8 @@
                 double radius = 2.3150762557983398
             }
             dictionary Perspective = {
-                double3 position = (1.236922099582017, 5.876533024872652, 2.342525554452723)
-                double3 target = (0.6184094338233211, 1.4318001674900689, 1.010514970386199)
+                double3 position = (0.38682079315185547, 4.1905412673950195, 2.0499253273010254)
+                double3 target = (-0.23169187260684032, -0.2541915899875624, 0.7179147432344983)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -81,7 +81,7 @@ def Xform "World"
         def Camera "base_camera"
         {
             float2 clippingRange = (0.01, 1000)
-            float focalLength = 14
+            float focalLength = 16
             float horizontalAperture = 20.955
             custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -1.9614624668238025)
             float verticalAperture = 20.955
@@ -395,7 +395,7 @@ def "Render" (
                 no_delete = true
             )
             {
-                rel camera = </World/ur5e/wrist_3_link/wrist_camera>
+                rel camera = </World/Sensors/base_camera>
                 token omni:rtx:background:source:texture:textureMode = "repeatMirrored"
                 token omni:rtx:background:source:type = "domeLight"
                 bool omni:rtx:material:db:nonVisualMaterialCSV:enabled = 0
@@ -415,7 +415,7 @@ def "Render" (
                 uint omni:rtx:viewTile:limit = 4294967295
                 rel orderedVars = </Render/Vars/LdrColor>
                 custom bool overrideClipRange = 0
-                uniform int2 resolution = (613, 738)
+                uniform int2 resolution = (1733, 928)
             }
 
             def RenderProduct "base_camera_render_product" (
@@ -424,7 +424,7 @@ def "Render" (
             )
             {
                 rel camera = </World/Sensors/base_camera>
-                uniform int2 resolution = (640, 480)
+                uniform int2 resolution = (320, 240)
             }
 
             def RenderProduct "wrist_camera_render_product" (
@@ -433,7 +433,7 @@ def "Render" (
             )
             {
                 rel camera = </World/ur5e/wrist_3_link/wrist_camera>
-                uniform int2 resolution = (640, 480)
+                uniform int2 resolution = (320, 240)
             }
 
             def RenderProduct "omni_kit_widget_viewport_ViewportTexture_1" (
@@ -478,7 +478,7 @@ def "Render" (
                 bool omni:rtx:scene:hydra:materialSyncLoads = 1
                 rel orderedVars = </Render/Vars/LdrColor>
                 custom bool overrideClipRange = 0
-                uniform int2 resolution = (640, 480)
+                uniform int2 resolution = (320, 240)
             }
 
             def RenderProduct "Replicator_01" (
@@ -493,7 +493,7 @@ def "Render" (
                 bool omni:rtx:scene:hydra:materialSyncLoads = 1
                 rel orderedVars = </Render/Vars/LdrColor>
                 custom bool overrideClipRange = 0
-                uniform int2 resolution = (640, 480)
+                uniform int2 resolution = (320, 240)
             }
         }
     }
@@ -709,8 +709,8 @@ def OmniGraph "ActionGraph"
             }
         )
         prepend uint inputs:execIn.connect = </ActionGraph/on_physics_step.outputs:step>
-        custom uint inputs:height = 480
-        custom uint inputs:width = 640
+        custom uint inputs:height = 240
+        custom uint inputs:width = 320
         token node:type = "isaacsim.core.nodes.IsaacCreateRenderProduct"
         int node:typeVersion = 2
         custom uint outputs:execOut (
@@ -743,8 +743,8 @@ def OmniGraph "ActionGraph"
             }
         )
         prepend uint inputs:execIn.connect = </ActionGraph/on_physics_step.outputs:step>
-        custom uint inputs:height = 480
-        custom uint inputs:width = 640
+        custom uint inputs:height = 240
+        custom uint inputs:width = 320
         token node:type = "isaacsim.core.nodes.IsaacCreateRenderProduct"
         int node:typeVersion = 2
         custom uint outputs:execOut (

@@ -50,6 +50,24 @@ ros2 launch ur5e_isaac_moveit_config controller_v1.launch.py
   109  ros2 control list_hardware_interfaces
 ````
 
+#### Recording Demonstration Episodes
+
+```sh
+ros2 bag record /camera/image_raw /camera_wrist/image_raw /joint_states -o ~/Development/VLA_Arm_Controller/training_data/episode_$EPISODE_ID
+```
+
+Set `EPISODE_ID` before running, e.g. `EPISODE_ID=001`. Stop with Ctrl+C.
+
+Add this function to `~/.bashrc` for convenience:
+
+```bash
+record_episode() {
+  ros2 bag record /camera/image_raw /camera_wrist/image_raw /joint_states -o ~/Development/VLA_Arm_Controller/training_data/episode_${1:?usage: record_episode <id>}
+}
+```
+
+---
+
 #### VLA Controller (OpenPI + ROS2 Bridge)
 
 Use two terminals.
