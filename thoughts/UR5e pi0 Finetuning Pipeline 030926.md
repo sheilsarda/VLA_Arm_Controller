@@ -70,7 +70,7 @@ openpi inference server  →  vla_controller_node  →  Isaac Sim
 
 | File | Change |
 |---|---|
-| `openpi/src/openpi/training/config.py` | Add `pi0_ur5` `TrainConfig` + import `ur5_policy` |
+| `openpi/src/openpi/training/config.py` | Add `pi0_ur5` `TrainConfig` + import `ur5_policy` |  
 
 ---
 
