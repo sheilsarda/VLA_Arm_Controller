@@ -18,7 +18,7 @@
                 double3 position = (0, 0, 5)
                 double radius = 5
             }
-            string boundCamera = "/World/Sensors/base_camera"
+            string boundCamera = "/World/ur5e/wrist_3_link/wrist_camera"
         }
         dictionary omni_layer = {
             string authoring_layer = "./ur5e_from_urdf_script.usda"
@@ -388,7 +388,7 @@ def "Render" (
                 uint omni:rtx:viewTile:limit = 4294967295
                 rel orderedVars = </Render/Vars/LdrColor>
                 custom bool overrideClipRange = 0
-                uniform int2 resolution = (1045, 928)
+                uniform int2 resolution = (1017, 1018)
             }
 
             def RenderProduct "base_camera_render_product" (
@@ -415,7 +415,7 @@ def "Render" (
                 no_delete = true
             )
             {
-                rel camera = </World/Sensors/base_camera>
+                rel camera = </World/ur5e/wrist_3_link/wrist_camera>
                 token omni:rtx:background:source:texture:textureMode = "repeatMirrored"
                 token omni:rtx:background:source:type = "domeLight"
                 bool omni:rtx:dlss:frameGeneration = 0

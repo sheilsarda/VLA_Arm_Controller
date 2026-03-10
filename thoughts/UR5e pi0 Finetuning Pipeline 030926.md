@@ -124,7 +124,7 @@ CLI usage:
 ```bash
 uv run examples/ur5/convert_ur5_bag_to_lerobot.py \
     --bags-dir ~/Development/VLA_Arm_Controller/training_data \
-    --repo-id your_hf_username/ur5_isaac_sim_v1 \
+    --repo-id sheilsarda/ur5_isaac_sim_v1 \
     --task "move the arm up and down" \
     [--output-fps 10] \
     [--push-to-hub]
@@ -137,7 +137,7 @@ Install: `pip install lero`
 Use LERO's interactive GUI to visually inspect episodes and delete any bad ones before training.
 
 ```bash
-lero gui --dataset your_hf_username/ur5_isaac_sim_v1
+lero gui --dataset sheilsarda/ur5_isaac_sim_v1
 ```
 
 ### Step 3 — `ur5_policy.py`
@@ -176,7 +176,7 @@ TrainConfig(
         action_horizon=16,
     ),
     data=LeRobotUR5DataConfig(
-        repo_id="your_hf_username/ur5_isaac_sim_v1",
+        repo_id="sheilsarda/ur5_isaac_sim_v1",
         assets=AssetsConfig(asset_id="ur5e"),
     ),
     weight_loader=weight_loaders.CheckpointWeightLoader(

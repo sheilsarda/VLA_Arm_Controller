@@ -50,24 +50,6 @@ ros2 launch ur5e_isaac_moveit_config controller_v1.launch.py
   109  ros2 control list_hardware_interfaces
 ````
 
-#### Recording Demonstration Episodes
-
-```sh
-ros2 bag record /camera/image_raw /camera_wrist/image_raw /joint_states -o ~/Development/VLA_Arm_Controller/training_data/episode_$EPISODE_ID
-```
-
-Set `EPISODE_ID` before running, e.g. `EPISODE_ID=001`. Stop with Ctrl+C.
-
-Add this function to `~/.bashrc` for convenience:
-
-```bash
-record_episode() {
-  ros2 bag record /camera/image_raw /camera_wrist/image_raw /joint_states -o ~/Development/VLA_Arm_Controller/training_data/episode_${1:?usage: record_episode <id>}
-}
-```
-
----
-
 #### VLA Controller (OpenPI + ROS2 Bridge)
 
 Use two terminals.
@@ -103,7 +85,7 @@ ros2 launch vla_controller vla.launch.py \
   openpi_port:=8000
 ````
 
-##### Runtime health logging (stdout)
+###### Runtime health logging (stdout)
 
 `vla_controller_node` prints:
 - periodic health snapshots
@@ -116,3 +98,71 @@ Tune verbosity in `src/vla_controller/config/vla_params.yaml`:
 - `health_log_period_sec` (`0` disables heartbeat)
 - `log_inference_packets`
 - `log_action_chunks`
+
+#### Finetuning a VLA
+
+##### Recording Demonstration Episodes
+
+```sh
+ros2 bag record /camera/image_raw /camera_wrist/image_raw /joint_states -o ~/Development/VLA_Arm_Controller/training_data/episode_$EPISODE_ID
+```
+
+Set `EPISODE_ID` before running, e.g. `EPISODE_ID=001`. Stop with Ctrl+C.
+
+Add this function to `~/.bashrc` for convenience:
+
+```bash
+record_episode() {
+  ros2 bag record /camera/image_raw /camera_wrist/image_raw /joint_states -o ~/Development/VLA_Arm_Controller/training_data/episode_${1:?usage: record_episode <id>}
+}
+```
+
+##### Converting Bags to LeRobot Dataset
+
+From the `openpi` repo (no ROS2 environment needed):
+
+```sh
+cd /home/sheil/Development/openpi
+source .venv/bin/activate
+uv run examples/ur5/convert_ur5_bag_to_lerobot.py \
+  --bags-dir ~/Development/VLA_Arm_Controller/training_data \
+  --repo-id sheilsarda/ur5_isaac_sim_v1 \
+  --task "lift the arm up"
+```
+
+Output lands in `~/.cache/huggingface/lerobot/sheilsarda/ur5_isaac_sim_v1/`.
+
+##### Inspecting the Dataset with LERO GUI
+
+First-time setup (do this once):
+
+```sh
+# Install system OpenCV — needed for AV1 video playback with hardware acceleration.
+# The pip version of opencv bundles its own ffmpeg without VA-API support, so it
+# can't decode AV1-encoded LeRobot videos. The system package links against the
+# system ffmpeg which does.
+sudo apt install python3-opencv vainfo nvidia-vaapi-driver
+
+# Verify your GPU supports AV1 hardware decode (look for VAProfileAV1Profile0)
+LIBVA_DRIVER_NAME=nvidia vainfo
+
+# Install LERO GUI dependencies (everything except opencv, which comes from system)
+cd ~/Development/lero
+uv pip install "lero[gui]"
+uv pip uninstall opencv-python  # remove the pip version
+
+# Downgrade numpy in the lero venv to match what system OpenCV was compiled against
+uv pip install "numpy<2"
+
+# Symlink system cv2 into the lero venv
+SYSTEM_CV2=$(/usr/bin/python3 -c "import cv2; print(cv2.__file__)")
+ln -s $SYSTEM_CV2 ~/Development/lero/.venv/lib/python3.12/site-packages/
+```
+
+Each time you want to inspect a dataset:
+
+```sh
+cd ~/Development/lero
+source .venv/bin/activate
+LIBVA_DRIVER_NAME=nvidia lero ~/.cache/huggingface/lerobot/sheilsarda/ur5_isaac_sim_v1 --gui
+```
