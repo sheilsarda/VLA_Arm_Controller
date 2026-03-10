@@ -166,57 +166,69 @@ Also add `make_ur5_example()` for smoke-testing the policy config.
 
 ### Step 4 — `pi0_ur5` TrainConfig
 
-Add to `_CONFIGS` list in `config.py` (before the debug configs):
+> **Status: DONE.** Config lives in `config.py`. Model was changed from full pi0 to **pi0-FAST LoRA** due to VRAM constraints (12GB RTX 4000 Ada — full pi0 needs ~48GB).
 
 ```python
 TrainConfig(
     name="pi0_ur5",
-    model=pi0_config.Pi0Config(
-        action_dim=7,
-        action_horizon=16,
+    model=pi0_fast.Pi0FASTConfig(
+        action_dim=8,          # 6 joints + 1 pad + 1 gripper
+        action_horizon=10,
+        max_token_len=180,
+        paligemma_variant="gemma_2b_lora",
     ),
     data=LeRobotUR5DataConfig(
         repo_id="sheilsarda/ur5_isaac_sim_v1",
-        assets=AssetsConfig(asset_id="ur5e"),
+        base_config=DataConfig(prompt_from_task=True),
     ),
     weight_loader=weight_loaders.CheckpointWeightLoader(
-        "gs://openpi-assets/checkpoints/pi0_base/params"
+        "gs://openpi-assets/checkpoints/pi0_fast_base/params"
     ),
     num_train_steps=5_000,
-    batch_size=32,
+    freeze_filter=pi0_fast.Pi0FASTConfig(...).get_freeze_filter(),
+    ema_decay=None,
+    batch_size=2,
+    num_workers=0,
 ),
 ```
 
-`LeRobotUR5DataConfig` (also new, in `config.py`) mirrors `LeRobotDROIDDataConfig` but uses `UR5Inputs`/`UR5Outputs` and the UR5 repack keys.
+`LeRobotUR5DataConfig` (in `config.py`) uses `Ur5Inputs`/`Ur5Outputs` from `src/openpi/policies/ur5_policy.py`. `Ur5Outputs` slices output back to `[:, :7]` (dropping the padding dim).
 
 ### Step 5 — Compute Norm Stats
 
+> **Must re-run any time the model config or dataset changes.**
+
 ```bash
 cd /home/sheil/Development/openpi
-uv run scripts/compute_norm_stats.py --config-name pi0_ur5
+uv run scripts/compute_norm_stats.py --config-name=pi0_ur5
 ```
 
-Writes stats to `./assets/ur5e/`.
+Writes stats to `./assets/pi0_ur5/sheilsarda/ur5_isaac_sim_v1/`.
 
 ### Step 6 — Fine-Tune
 
 ```bash
-XLA_PYTHON_CLIENT_MEM_FRACTION=0.9 uv run scripts/train.py pi0_ur5 \
-    --exp-name=ur5_isaac_vertical_v1
+XLA_PYTHON_CLIENT_MEM_FRACTION=0.85 uv run scripts/train.py pi0_ur5 \
+    --exp-name=ur5_lift_v1 --overwrite
 ```
 
-- Checkpoint interval: 1 000 steps.
-- Evaluate at 2–5k steps — the task is simple enough that it should work quickly if the pipeline is correct.
+- `XLA_PYTHON_CLIENT_MEM_FRACTION=0.85` — required to avoid OOM on 12GB VRAM
+- Checkpoint interval: 1,000 steps (default)
+- Checkpoints saved to `checkpoints/pi0_ur5/ur5_lift_v1/`
+- Evaluate at 2–5k steps — the task is simple enough that it should work quickly if the pipeline is correct
 
 ### Step 7 — Serve Fine-Tuned Model
 
 ```bash
+cd /home/sheil/Development/openpi
 uv run scripts/serve_policy.py policy:checkpoint \
     --policy.config=pi0_ur5 \
-    --policy.dir=checkpoints/pi0_ur5/ur5_isaac_vertical_v1/5000
+    --policy.dir=checkpoints/pi0_ur5/ur5_lift_v1/5000
 ```
 
 Update `vla_params.yaml`: set `action_mode: delta` (instead of `velocity`).
+
+> **Next:** Write the UR5e inference client (`vla_controller_node`) that connects to the openpi server and sends observations / receives actions.
 
 ---
 

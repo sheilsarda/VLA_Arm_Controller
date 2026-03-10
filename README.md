@@ -56,6 +56,17 @@ Use two terminals.
 
 ##### Terminal 1: start the OpenPI inference server from the `openpi` repo:
 
+For the fine-tuned UR5 model (after training — see Fine-Tuning section below):
+
+````sh
+cd /home/sheil/Development/openpi
+uv run scripts/serve_policy.py policy:checkpoint \
+  --policy.config=pi0_ur5 \
+  --policy.dir=checkpoints/pi0_ur5/ur5_lift_v1/5000
+````
+
+For zero-shot DROID baseline (before fine-tuning):
+
 ````sh
 cd /home/sheil/Development/openpi
 uv run scripts/serve_policy.py --env=DROID
@@ -166,3 +177,25 @@ cd ~/Development/lero
 source .venv/bin/activate
 LIBVA_DRIVER_NAME=nvidia lero ~/.cache/huggingface/lerobot/sheilsarda/ur5_isaac_sim_v1 --gui
 ```
+
+##### Fine-Tuning (pi0-FAST LoRA)
+
+The model is **pi0-FAST with LoRA** — required to fit within 12GB VRAM. Full pi0 fine-tuning needs ~48GB.
+
+**Step 1 — Compute norm stats** (run once, or after changing dataset/config):
+
+```sh
+cd ~/Development/openpi
+uv run scripts/compute_norm_stats.py --config-name=pi0_ur5
+```
+
+**Step 2 — Train:**
+
+```sh
+XLA_PYTHON_CLIENT_MEM_FRACTION=0.85 uv run scripts/train.py pi0_ur5 \
+  --exp-name=ur5_lift_v1 --overwrite
+```
+
+- Checkpoints saved to `checkpoints/pi0_ur5/ur5_lift_v1/` every 1,000 steps
+- Pretrained weights downloaded automatically from `gs://openpi-assets/checkpoints/pi0_fast_base/params`
+- `--overwrite` is safe — only deletes the local experiment dir, not the pretrained GCS weights
