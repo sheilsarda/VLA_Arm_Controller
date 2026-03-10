@@ -1,0 +1,36 @@
+vla_controller_node:
+  ros__parameters:
+    openpi_host: "localhost"
+    openpi_port: 8000
+
+    base_camera_topic: "/camera/image_raw"
+    wrist_camera_topic: "/camera_wrist/image_raw"
+    joint_state_topic: "/joint_states"
+
+    arm_action_name: "/ur_manipulator_controller/follow_joint_trajectory"
+
+    task_instruction: "pick up the block"
+    action_mode: "velocity"  # velocity for pi05_droid; switch to delta for UR5-custom models
+    action_scale: 1.0
+    velocity_scale: 1.0
+    open_loop_horizon: 5
+    waypoint_dt: 0.1
+    dry_run: false
+    health_log_period_sec: 2.0
+    log_inference_packets: true
+    log_action_chunks: true
+
+    joint_names:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+
+    # If this joint is missing in /joint_states, the bridge will use 0.0.
+    gripper_joint: "robotiq_85_left_knuckle_joint"
+
+    # Broad defaults; tighten these later if you want extra safety.
+    joint_lower_limits: [-6.283185, -6.283185, -6.283185, -6.283185, -6.283185, -6.283185]
+    joint_upper_limits: [ 6.283185,  6.283185,  6.283185,  6.283185,  6.283185,  6.283185]

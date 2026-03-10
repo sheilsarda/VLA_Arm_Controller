@@ -50,3 +50,51 @@ ros2 launch ur5e_isaac_moveit_config controller_v1.launch.py
   109  ros2 control list_hardware_interfaces
 ````
 
+#### VLA Controller (OpenPI + ROS2 Bridge)
+
+Use two terminals.
+
+##### Terminal 1: start the OpenPI inference server from the `openpi` repo:
+
+````sh
+cd /home/sheil/Development/openpi
+uv run scripts/serve_policy.py --env=DROID
+````
+
+##### Terminal 2: build and launch the full ROS2 side (controller manager + spawners + VLA bridge, no `move_group`):
+
+````sh
+cd /home/sheil/Development/VLA_Arm_Controller
+source .venv/bin/activate
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select vla_controller
+source install/setup.bash
+
+ros2 launch vla_controller vla_system.launch.py \
+  task:="pick up the block" \
+  openpi_host:=localhost \
+  openpi_port:=8000
+````
+
+**Appendix: If controllers are already running in another terminal/session, launch only the bridge node:**
+
+````sh
+ros2 launch vla_controller vla.launch.py \
+  task:="pick up the block" \
+  openpi_host:=localhost \
+  openpi_port:=8000
+````
+
+##### Runtime health logging (stdout)
+
+`vla_controller_node` prints:
+- periodic health snapshots
+- OpenPI packet receive/fail/invalid counters and latency
+- action chunk generated/sent/dropped counters
+- action server readiness transitions
+- goal success/reject/error counters
+
+Tune verbosity in `src/vla_controller/config/vla_params.yaml`:
+- `health_log_period_sec` (`0` disables heartbeat)
+- `log_inference_packets`
+- `log_action_chunks`

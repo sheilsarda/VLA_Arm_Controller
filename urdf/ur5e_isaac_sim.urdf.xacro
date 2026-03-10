@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur5e">
 
+  <xacro:arg name="initial_positions_file" default="$(find ur5e_isaac_moveit_config)/config/initial_positions.yaml"/>
+  <xacro:property name="initial_positions_file" default="$(arg initial_positions_file)"/>
+  <xacro:property name="initial_positions" value="${xacro.load_yaml(initial_positions_file)['initial_positions']}"/>
+
   <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
   <xacro:include filename="$(find ur_description)/urdf/inc/ur_joint_control.xacro"/>
   <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
@@ -40,7 +44,7 @@
       <param name="joint_states_topic">/joint_states</param>
     </hardware>
 
-    <xacro:ur_joint_control_description tf_prefix=""/>
+    <xacro:ur_joint_control_description tf_prefix="" initial_positions="${initial_positions}"/>
 
     <!-- Gripper: only the actuated joint; mimic joints follow automatically -->
     <joint name="robotiq_85_left_knuckle_joint">
