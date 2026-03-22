@@ -254,13 +254,10 @@ class VLAControllerNode(Node):
         if base is None or wrist is None:
             return None
 
-        # Keep the bridge on one schema for now to reduce integration complexity:
-        # DROID-compatible keys for pre-trained pi0/pi0.5 DROID checkpoints.
-        padded_joints = np.concatenate([joints.astype(np.float32), np.zeros(1, dtype=np.float32)])
         return {
             "observation/exterior_image_1_left": base,
             "observation/wrist_image_left": wrist,
-            "observation/joint_position": padded_joints,
+            "observation/joint_position": joints.astype(np.float32),  # 6D — Ur5Inputs pads to 8D server-side
             "observation/gripper_position": np.asarray([gripper], dtype=np.float32),
             "prompt": self.task_instruction,
         }

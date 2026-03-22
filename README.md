@@ -52,46 +52,83 @@ ros2 launch ur5e_isaac_moveit_config controller_v1.launch.py
 
 #### VLA Controller (OpenPI + ROS2 Bridge)
 
+**Prerequisite:** the `openpi` repo must be cloned into the same root directory as this repo:
+
+````sh
+git clone https://github.com/sheilsarda/openpi.git ~/Development/openpi
+cd ~/Development/openpi && uv sync
+````
+
+The launch file automatically injects `openpi_client` into `PYTHONPATH` — no manual `source .venv/bin/activate` needed at launch time.
+
+> **Note — observation schema for fine-tuned models:** The controller sends raw 6D joint positions to the openpi server. The server-side `Ur5Inputs` transform pads them to 7D, then concatenates the gripper to produce the 8D state the model expects. Do **not** pre-pad joints in the controller — the old DROID baseline did this to match the 7-DOF Franka convention, but applying that padding here would double-pad to 9D and produce garbage inference.
+
 Use two terminals.
 
-##### Terminal 1: start the OpenPI inference server from the `openpi` repo:
+##### Terminal 1: start the OpenPI inference server
 
-For the fine-tuned UR5 model (after training — see Fine-Tuning section below):
+First, download the fine-tuned checkpoint from HuggingFace if you haven't already (run from the openpi repo):
 
 ````sh
-cd /home/sheil/Development/openpi
+cd ~/Development/openpi
+python -c "
+from huggingface_hub import snapshot_download
+snapshot_download(
+    repo_id='sheilsarda/pi0_ur5_fast_v1',
+    repo_type='model',
+    local_dir='checkpoints/pi0_ur5/ur5_fast_v1',
+)
+"
+````
+
+Then serve it:
+
+````sh
+cd ~/Development/openpi
 uv run scripts/serve_policy.py policy:checkpoint \
   --policy.config=pi0_ur5 \
-  --policy.dir=checkpoints/pi0_ur5/ur5_lift_v1/5000
+  --policy.dir=checkpoints/pi0_ur5/ur5_fast_v1/9999
 ````
 
-For zero-shot DROID baseline (before fine-tuning):
+##### Terminal 2: build and launch the ROS2 VLA bridge
+
+**One-time setup** — create a Python 3.12 venv containing only `openpi_client`. This avoids ABI conflicts between the openpi venv (Python 3.11) and the system ROS2 Python (3.12):
 
 ````sh
-cd /home/sheil/Development/openpi
-uv run scripts/serve_policy.py --env=DROID
+cd ~/Development/VLA_Arm_Controller
+python3 -m venv .venv
+.venv/bin/pip install openpi-client
 ````
 
-##### Terminal 2: build and launch the full ROS2 side (controller manager + spawners + VLA bridge, no `move_group`):
+**Build without the venv active** so the entry point uses system Python 3.12 and can find `cv_bridge`:
 
 ````sh
-cd /home/sheil/Development/VLA_Arm_Controller
-source .venv/bin/activate
+cd ~/Development/VLA_Arm_Controller
 source /opt/ros/jazzy/setup.bash
-colcon build --packages-select vla_controller
+colcon build
 source install/setup.bash
-
-ros2 launch vla_controller vla_system.launch.py \
-  task:="pick up the block" \
-  openpi_host:=localhost \
-  openpi_port:=8000
 ````
 
-**Appendix: If controllers are already running in another terminal/session, launch only the bridge node:**
+**Dry run first** (infers actions but does not send trajectories — verify action values look sane):
 
 ````sh
 ros2 launch vla_controller vla.launch.py \
-  task:="pick up the block" \
+  task:="move the arm up" \
+  dry_run:=true
+````
+
+**Live run** (sends trajectories to the arm):
+
+````sh
+ros2 launch vla_controller vla.launch.py \
+  task:="move the arm up"
+````
+
+**If the full controller stack is already running** (controller manager + spawners in another session), launch only the bridge node:
+
+````sh
+ros2 launch vla_controller vla_system.launch.py \
+  task:="move the arm up" \
   openpi_host:=localhost \
   openpi_port:=8000
 ````
@@ -182,20 +219,29 @@ LIBVA_DRIVER_NAME=nvidia lero ~/.cache/huggingface/lerobot/sheilsarda/ur5_isaac_
 
 The model is **pi0-FAST with LoRA** — required to fit within 12GB VRAM. Full pi0 fine-tuning needs ~48GB.
 
-**Step 1 — Compute norm stats** (run once, or after changing dataset/config):
+Training is done in Google Colab. See the notebooks in `model_training/`:
+- `train_pi0fast_ur5_colab_031026.ipynb` — pi0-FAST (primary)
+- `train_pi0_ur5_base_colab_032226.ipynb` — pi0-base (comparison)
+
+Each notebook has three training cells per model: **norm stats**, **from scratch**, and **resume**. Run one of the latter two, not both.
+
+**Current checkpoints on HuggingFace:**
+- `sheilsarda/pi0_ur5_fast_v1` — 10k steps, ready for inference
+- `sheilsarda/pi0_ur5_base_v1` — not yet trained
+
+**To resume training locally** (if you have a GPU with enough VRAM):
 
 ```sh
 cd ~/Development/openpi
-uv run scripts/compute_norm_stats.py --config-name=pi0_ur5
+
+# From scratch:
+uv run scripts/train.py pi0_ur5 --exp-name=ur5_fast_v1 --overwrite --num-train-steps 10000
+
+# Resume from existing checkpoint:
+uv run scripts/train.py pi0_ur5 --exp-name=ur5_fast_v1 --resume --num-train-steps 20000
 ```
 
-**Step 2 — Train:**
-
-```sh
-XLA_PYTHON_CLIENT_MEM_FRACTION=0.85 uv run scripts/train.py pi0_ur5 \
-  --exp-name=ur5_lift_v1 --overwrite
-```
-
-- Checkpoints saved to `checkpoints/pi0_ur5/ur5_lift_v1/` every 1,000 steps
+- Checkpoints saved to `checkpoints/pi0_ur5/ur5_fast_v1/` every 1,000 steps
 - Pretrained weights downloaded automatically from `gs://openpi-assets/checkpoints/pi0_fast_base/params`
-- `--overwrite` is safe — only deletes the local experiment dir, not the pretrained GCS weights
+
+> **Note — pi0-base action_dim mismatch:** The pi0-base pretrained checkpoint uses `action_dim=32` (DROID convention). Our UR5 config uses `action_dim=8`. Loading the checkpoint naively causes a shape mismatch on `action_in_proj/kernel` (32×1024 vs 8×1024). The fix is `excluded_prefixes=("action_in_proj", "action_out_proj")` in the `CheckpointWeightLoader` config, which skips those layers and lets them reinitialize randomly for our action space. This is already applied in `openpi/src/openpi/training/config.py` for the `pi0_ur5_base` config.
