@@ -15,7 +15,7 @@ setup(
             ["launch/vla.launch.py", "launch/vla_system.launch.py"],
         ),
     ],
-    install_requires=["setuptools"],
+    install_requires=["setuptools", "matplotlib"],
     zip_safe=True,
     maintainer="sheilsarda",
     maintainer_email="sheilsarda@gmail.com",
@@ -24,6 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             "vla_controller_node = vla_controller.vla_controller_node:main",
+            "viz_dry_run = vla_controller.viz_dry_run:main",
         ],
     },
 )

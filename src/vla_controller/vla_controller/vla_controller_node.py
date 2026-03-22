@@ -11,6 +11,7 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from sensor_msgs.msg import Image, JointState
+from std_msgs.msg import Float64MultiArray
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 try:
@@ -118,6 +119,12 @@ class VLAControllerNode(Node):
         self.create_subscription(Image, self.wrist_camera_topic, self._wrist_image_cb, 10)
         self.create_subscription(JointState, self.joint_state_topic, self._joint_state_cb, 30)
         self.arm_action_client = ActionClient(self, FollowJointTrajectory, self.arm_action_name)
+
+        # Diagnostic publishers for offline visualization.
+        # raw_actions: the full action chunk returned by the model, flattened.
+        # predicted_targets: the computed joint targets after applying deltas, flattened.
+        self._raw_actions_pub = self.create_publisher(Float64MultiArray, "~/raw_actions", 10)
+        self._predicted_targets_pub = self.create_publisher(Float64MultiArray, "~/predicted_targets", 10)
 
         # cached state
         self._latest_base_img: Optional[np.ndarray] = None
@@ -507,6 +514,16 @@ class VLAControllerNode(Node):
                 f"(n_steps={n_steps}, actions_shape={actions.shape}, "
                 f"first_action={np.array2string(actions[0, :6], precision=3)})"
             )
+
+        # Publish diagnostics for offline visualization.
+        raw_msg = Float64MultiArray()
+        raw_msg.data = actions[:n_steps, :6].flatten().tolist()
+        self._raw_actions_pub.publish(raw_msg)
+
+        tgt_msg = Float64MultiArray()
+        tgt_msg.data = np.stack(targets).flatten().tolist()
+        self._predicted_targets_pub.publish(tgt_msg)
+
         self._send_trajectory(targets, chunk_id)
 
         self._next_infer_time = now + (n_steps * self.waypoint_dt)

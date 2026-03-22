@@ -55,7 +55,7 @@ def generate_launch_description() -> LaunchDescription:
         "openpi_port", default_value="8000", description="OpenPI server port"
     )
     task_arg = DeclareLaunchArgument(
-        "task", default_value="pick up the block", description="Task instruction prompt"
+        "task", description="Task instruction prompt (required)"
     )
     dry_run_arg = DeclareLaunchArgument(
         "dry_run",

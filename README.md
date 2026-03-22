@@ -151,6 +151,46 @@ Tune verbosity in `src/vla_controller/config/vla_params.yaml`:
 - `log_inference_packets`
 - `log_action_chunks`
 
+#### Evaluating Inference (Dry-Run Visualization)
+
+The `viz_dry_run` tool records a rosbag of the VLA controller's diagnostic output and produces matplotlib plots for offline analysis. Use it to verify the model is producing reasonable actions before running live on the arm.
+
+##### Live recording
+
+Start this in a separate terminal while the VLA controller is running with `dry_run:=true`:
+
+```sh
+ros2 run vla_controller viz_dry_run
+```
+
+The tool subscribes to:
+- `/joint_states` — current arm joint positions
+- `/vla_controller_node/raw_actions` — the model's raw action deltas (6 joints per step)
+- `/vla_controller_node/predicted_targets` — computed target joint positions after applying deltas
+
+Data is recorded to a timestamped rosbag in `training_data/eval_runs/`. Press Ctrl+C to stop recording and display plots.
+
+To auto-stop after a fixed duration:
+
+```sh
+ros2 run vla_controller viz_dry_run --ros-args -p timeout_sec:=60.0
+```
+
+##### Replaying a saved evaluation
+
+Re-plot from a previously recorded bag without a live ROS system:
+
+```sh
+ros2 run vla_controller viz_dry_run --ros-args \
+  -p replay:=training_data/eval_runs/eval_20260322_154800
+```
+
+##### What the plots show
+
+1. **Joint Positions Over Time** — actual joint positions (blue) with predicted targets overlaid (red). Shows whether the model's commands track a coherent trajectory.
+2. **Raw Action Deltas** — the delta joint commands the model outputs per inference chunk. Should be small, smooth values (radians). Large spikes or all-zeros indicate problems.
+3. **Action Magnitude Analysis** — per-joint boxplot and L2 norm histogram. If the median magnitude is near zero, the model is likely returning decode failures (see `thoughts/FAST Token Decoding Failure Root Cause and Fix Plan 032226.md`).
+
 #### Finetuning a VLA
 
 ##### Recording Demonstration Episodes
