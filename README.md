@@ -112,7 +112,7 @@ source install/setup.bash
 **Dry run first** (infers actions but does not send trajectories — verify action values look sane):
 
 ````sh
-ros2 launch vla_controller vla.launch.py \
+ros2 launch vla_controller vla_system.launch.py \
   task:="move the arm up" \
   dry_run:=true
 ````
@@ -120,18 +120,11 @@ ros2 launch vla_controller vla.launch.py \
 **Live run** (sends trajectories to the arm):
 
 ````sh
-ros2 launch vla_controller vla.launch.py \
+ros2 launch vla_controller vla_system.launch.py \
   task:="move the arm up"
 ````
 
-**If the full controller stack is already running** (controller manager + spawners in another session), launch only the bridge node:
-
-````sh
-ros2 launch vla_controller vla_system.launch.py \
-  task:="move the arm up" \
-  openpi_host:=localhost \
-  openpi_port:=8000
-````
+`vla_system.launch.py` starts the full stack: robot state publisher, controller manager, controller spawners, and the VLA bridge node. Isaac Sim must be running with the ROS2 bridge enabled and the simulation playing before launching.
 
 ###### Runtime health logging (stdout)
 
