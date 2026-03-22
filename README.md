@@ -126,6 +126,17 @@ ros2 launch vla_controller vla_system.launch.py \
 
 `vla_system.launch.py` starts the full stack: robot state publisher, controller manager, controller spawners, and the VLA bridge node. Isaac Sim must be running with the ROS2 bridge enabled and the simulation playing before launching.
 
+After starting the VLA system, you can double check controllers are spun up correctly by running the following ros2 command
+
+```sh
+sheil@sheil-Precision-7680:~$ ros2 control list_controllers
+[INFO] [1774217689.978237450] [_ros2cli_53082]: waiting for service /controller_manager/list_controllers to become available...
+ur_manipulator_controller joint_trajectory_controller/JointTrajectoryController  active
+joint_state_broadcaster   joint_state_broadcaster/JointStateBroadcaster          active
+gripper_controller        joint_trajectory_controller/JointTrajectoryController  active
+sheil@sheil-Precision-7680:~$ 
+```
+
 ###### Runtime health logging (stdout)
 
 `vla_controller_node` prints:
