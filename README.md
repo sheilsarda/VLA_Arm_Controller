@@ -151,16 +151,16 @@ Tune verbosity in `src/vla_controller/config/vla_params.yaml`:
 - `log_inference_packets`
 - `log_action_chunks`
 
-#### Evaluating Inference (Dry-Run Visualization)
+#### Evaluating Inference
 
-The `viz_dry_run` tool records a rosbag of the VLA controller's diagnostic output and produces matplotlib plots for offline analysis. Use it to verify the model is producing reasonable actions before running live on the arm.
+The `eval_recorder` tool records a rosbag of the VLA controller's diagnostic output and produces matplotlib plots for offline analysis. Works in both dry-run and live mode.
 
 ##### Live recording
 
 Start this in a separate terminal while the VLA controller is running with `dry_run:=true`:
 
 ```sh
-ros2 run vla_controller viz_dry_run
+ros2 run vla_controller eval_recorder
 ```
 
 The tool subscribes to:
@@ -173,7 +173,7 @@ Data is recorded to a timestamped rosbag in `training_data/eval_runs/`. Press Ct
 To auto-stop after a fixed duration:
 
 ```sh
-ros2 run vla_controller viz_dry_run --ros-args -p timeout_sec:=60.0
+ros2 run vla_controller eval_recorder --ros-args -p timeout_sec:=60.0
 ```
 
 ##### Replaying a saved evaluation
@@ -181,7 +181,7 @@ ros2 run vla_controller viz_dry_run --ros-args -p timeout_sec:=60.0
 Re-plot from a previously recorded bag without a live ROS system:
 
 ```sh
-ros2 run vla_controller viz_dry_run --ros-args \
+ros2 run vla_controller eval_recorder --ros-args \
   -p replay:=training_data/eval_runs/eval_20260322_154800
 ```
 

@@ -1,18 +1,18 @@
-"""Visualization and recording for VLA controller dry-run evaluation.
+"""Record and visualize VLA controller evaluation runs.
 
-Records a rosbag of diagnostic topics while the VLA controller runs, then
-produces matplotlib plots on Ctrl+C (or after a timeout). Bags are saved to
-training_data/eval_runs/ for later replay.
+Records a rosbag of diagnostic topics while the VLA controller runs (live or
+dry-run mode), then produces matplotlib plots on Ctrl+C (or after a timeout).
+Bags are saved to training_data/eval_runs/ for later replay.
 
 Usage:
     # Live recording + plotting (Ctrl+C to stop and plot):
-    ros2 run vla_controller viz_dry_run
+    ros2 run vla_controller eval_recorder
 
     # Auto-stop after 60 seconds:
-    ros2 run vla_controller viz_dry_run --ros-args -p timeout_sec:=60.0
+    ros2 run vla_controller eval_recorder --ros-args -p timeout_sec:=60.0
 
     # Replay a previously recorded bag (no live subscription needed):
-    ros2 run vla_controller viz_dry_run --ros-args -p replay:=training_data/eval_runs/eval_20260322_154800
+    ros2 run vla_controller eval_recorder --ros-args -p replay:=training_data/eval_runs/eval_20260322_154800
 """
 
 import os
@@ -71,9 +71,9 @@ def _make_bag_path() -> str:
     return os.path.join(EVAL_DIR, f"eval_{stamp}")
 
 
-class VizDryRunNode(Node):
+class EvalRecorderNode(Node):
     def __init__(self):
-        super().__init__("viz_dry_run")
+        super().__init__("eval_recorder")
 
         self.declare_parameter("timeout_sec", 0.0)
         self.declare_parameter("replay", "")
@@ -117,7 +117,7 @@ class VizDryRunNode(Node):
             self.create_timer(1.0, self._check_timeout)
 
         self.get_logger().info(
-            f"viz_dry_run started. Recording to {self._bag_path}\n"
+            f"eval_recorder started. Recording to {self._bag_path}\n"
             f"{'Press Ctrl+C to stop and plot.' if self.timeout_sec <= 0 else f'Will auto-plot after {self.timeout_sec}s.'}"
         )
 
@@ -372,7 +372,7 @@ class VizDryRunNode(Node):
 
 def main():
     rclpy.init()
-    node = VizDryRunNode()
+    node = EvalRecorderNode()
 
     # In replay mode the plot is already shown; just clean up.
     if node.replay_path:

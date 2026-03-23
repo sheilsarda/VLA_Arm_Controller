@@ -24,7 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             "vla_controller_node = vla_controller.vla_controller_node:main",
-            "viz_dry_run = vla_controller.viz_dry_run:main",
+            "eval_recorder = vla_controller.eval_recorder:main",
         ],
     },
 )

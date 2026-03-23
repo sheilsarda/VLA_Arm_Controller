@@ -51,7 +51,6 @@ def main():
     # Read all data from bag.
     joint_index_map = None
     first_ts = None
-    last_joint_ts = None
     joint_times, joint_positions = [], []
     raw_actions = []  # (t, np.array(n_steps, 6))
     predicted_targets = []  # (t, np.array(n_steps, 6))
@@ -76,10 +75,6 @@ def main():
                     joint_index_map.append(name_to_idx[name])
                 if joint_index_map is None:
                     continue
-            # Drop the "echo" publisher that arrives <10ms after the real one.
-            if last_joint_ts is not None and (t - last_joint_ts) < 0.01:
-                continue
-            last_joint_ts = t
             pos = np.array(msg.position)[joint_index_map]
             joint_times.append(t)
             joint_positions.append(pos)

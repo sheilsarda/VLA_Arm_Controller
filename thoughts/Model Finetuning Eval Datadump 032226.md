@@ -219,7 +219,7 @@ The Raw Action Deltas plot confirms this — each inference chunk produces a sma
 |---|---|
 | 2026-03-22 | Relaxed decoding patch applied to `openpi/src/openpi/models/tokenizer.py`. |
 | 2026-03-22 | First successful non-zero inference (Eval Run 1). |
-| 2026-03-22 | `viz_dry_run` evaluation tool built — records rosbag + produces diagnostic plots. |
+| 2026-03-22 | `eval_recorder` evaluation tool built — records rosbag + produces diagnostic plots. |
 | 2026-03-22 | Training resumed toward 20-30k steps on Colab A100 (pending). |
 | 2026-03-22 | Eval Run 2 — longer run confirms model outputs small directionless deltas. Under-trained at 10k steps. |
 
