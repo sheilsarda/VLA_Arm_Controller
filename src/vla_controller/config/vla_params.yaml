@@ -10,7 +10,7 @@ vla_controller_node:
     arm_action_name: "/ur_manipulator_controller/follow_joint_trajectory"
 
     task_instruction: "pick up the block"
-    action_mode: "velocity"  # velocity for pi05_droid; switch to delta for UR5-custom models
+    action_mode: "delta"  # delta for fine-tuned UR5 models; velocity for pi0/pi05 DROID baseline
     action_scale: 1.0
     velocity_scale: 1.0
     open_loop_horizon: 5

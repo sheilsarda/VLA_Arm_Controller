@@ -13,17 +13,27 @@ from moveit_configs_utils.launches import generate_spawn_controllers_launch
 
 
 def _venv_pythonpath_env() -> dict:
-    venv = os.environ.get("VIRTUAL_ENV")
-    if not venv:
-        return {}
-
+    # Inject openpi_client into the node's PYTHONPATH using a Python 3.12 venv
+    # that lives in this repo and contains only openpi_client + its pure-Python deps.
+    # Using a 3.12 venv (matching the system ROS2 Python) avoids ABI conflicts with
+    # compiled extensions like numpy and cv2 that live in the openpi venv (Python 3.11).
+    #
+    # One-time setup:
+    #   python3 -m venv .venv
+    #   .venv/bin/pip install openpi-client
+    venv_dir = os.path.expanduser("~/Development/VLA_Arm_Controller/.venv")
     site_packages = os.path.join(
-        venv,
+        venv_dir,
         "lib",
         f"python{sys.version_info.major}.{sys.version_info.minor}",
         "site-packages",
     )
+
     if not os.path.isdir(site_packages):
+        print(
+            "[vla_controller] WARNING: local .venv not found. openpi_client will not be available. "
+            "Run: python3 -m venv .venv && .venv/bin/pip install openpi-client"
+        )
         return {}
 
     current_pythonpath = os.environ.get("PYTHONPATH", "")
@@ -45,7 +55,7 @@ def generate_launch_description() -> LaunchDescription:
         "openpi_port", default_value="8000", description="OpenPI server port"
     )
     task_arg = DeclareLaunchArgument(
-        "task", default_value="pick up the block", description="Task instruction prompt"
+        "task", description="Task instruction prompt (required)"
     )
     dry_run_arg = DeclareLaunchArgument(
         "dry_run",

@@ -1,0 +1,3 @@
+# Uncomment to strip notebook outputs before diffing/committing (keeps diffs clean).
+# Requires: pip install nbstripout && nbstripout --install
+# model_training/*.ipynb filter=strip-notebook-output
