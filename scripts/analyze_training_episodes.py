@@ -56,18 +56,12 @@ def _resolve_joint_indices(joint_names):
     return indices
 
 
-def read_episode_joint_states(episode_dir: str, resample_dt: float = 0.1):
-    """Read joint states from a training episode rosbag, resampled to a fixed rate.
-
-    Isaac Sim publishes two interleaved joint state streams on /joint_states
-    (one real, one near-zero) with sub-millisecond gaps between them. To get
-    clean data, we resample to a fixed time interval using nearest-neighbor
-    lookup, which naturally deduplicates the streams.
+def _read_raw_joint_states(episode_dir: str):
+    """Read all raw /joint_states messages from an episode bag, no resampling.
 
     Returns (timestamps, positions) where timestamps is shape (N,) in seconds
-    relative to the first message and positions is shape (N, 6).
+    and positions is shape (N, 6), one row per message as recorded.
     """
-    # Find the .mcap file inside the episode directory.
     mcap_files = [f for f in os.listdir(episode_dir) if f.endswith(".mcap")]
     if not mcap_files:
         raise FileNotFoundError(f"No .mcap file in {episode_dir}")
@@ -75,8 +69,8 @@ def read_episode_joint_states(episode_dir: str, resample_dt: float = 0.1):
 
     joint_index_map = None
     first_timestamp = None
-    raw_timestamps = []
-    raw_positions = []
+    timestamps = []
+    positions = []
 
     for msg_view in read_ros2_messages(mcap_path, topics=["/joint_states"]):
         msg = msg_view.ros_msg
@@ -92,21 +86,19 @@ def read_episode_joint_states(episode_dir: str, resample_dt: float = 0.1):
 
         t = (timestamp_ns - first_timestamp) / 1e9
         pos = np.array(msg.position)[joint_index_map]
-        raw_timestamps.append(t)
-        raw_positions.append(pos)
+        timestamps.append(t)
+        positions.append(pos)
 
-    raw_ts = np.array(raw_timestamps)
-    raw_pos = np.stack(raw_positions)
+    return np.array(timestamps), np.stack(positions)
 
-    # Isaac Sim publishes two interleaved streams on /joint_states: one with
-    # real positions and one with near-zero values, arriving ~0.4ms apart.
-    # Filter to keep only one stream by dropping messages that arrive < 10ms
-    # after the previous one (these are the "echo" from the second publisher).
-    dt = np.diff(raw_ts)
-    keep = np.ones(len(raw_ts), dtype=bool)
-    keep[1:] = dt > 0.01  # drop the quick-follow messages
-    raw_ts = raw_ts[keep]
-    raw_pos = raw_pos[keep]
+
+def read_episode_joint_states(episode_dir: str, resample_dt: float = 0.1):
+    """Read joint states from a training episode rosbag, resampled to a fixed rate.
+
+    Returns (timestamps, positions) where timestamps is shape (N,) in seconds
+    relative to the first message and positions is shape (N, 6).
+    """
+    raw_ts, raw_pos = _read_raw_joint_states(episode_dir)
 
     # Resample to fixed interval using nearest-neighbor lookup.
     duration = raw_ts[-1]
@@ -153,6 +145,26 @@ def load_all_episodes():
 
 def generate_plots(episodes, all_deltas):
     """Generate and save plots to the thoughts/ directory."""
+
+    # --- Per-episode plots: raw joint positions ---
+    ep_plots_dir = os.path.join(THOUGHTS_DIR, "episode_plots")
+    os.makedirs(ep_plots_dir, exist_ok=True)
+
+    for ep_id in sorted(episodes.keys()):
+        ep_dir = os.path.join(TRAINING_DATA_DIR, f"episode_{ep_id:03d}")
+        raw_ts, raw_pos = _read_raw_joint_states(ep_dir)
+        fig, axes = plt.subplots(6, 1, figsize=(12, 10), sharex=True)
+        fig.suptitle(f"Episode {ep_id:03d} — Raw Joint Positions Over Time", fontsize=14)
+        for i, ax in enumerate(axes):
+            ax.plot(raw_ts, raw_pos[:, i], "b-", linewidth=0.5)
+            ax.set_ylabel(f"{JOINT_NAMES[i]}\n(rad)", fontsize=8)
+            ax.grid(True, alpha=0.3)
+        axes[-1].set_xlabel("Time (s)")
+        fig.tight_layout()
+        fig.savefig(os.path.join(ep_plots_dir, f"episode_{ep_id:03d}.png"), dpi=150, bbox_inches="tight")
+        plt.close(fig)
+
+    print(f"Saved per-episode plots to {ep_plots_dir}/")
 
     # --- Plot 1: Joint positions over time (all episodes overlaid) ---
     fig1, axes1 = plt.subplots(6, 1, figsize=(12, 10), sharex=True)
@@ -302,9 +314,9 @@ def append_to_markdown(episodes, all_deltas, magnitudes):
 **Total Samples (resampled at 0.1s):** {total_msgs:,}
 **Total Delta Samples:** {total_deltas:,}
 
-> Positions are resampled from raw bag data (~35 Hz with interleaved duplicate
-> publishers) to 0.1s intervals via nearest-neighbor lookup. This matches the
-> eval waypoint cadence, so deltas are directly comparable without normalization.
+> Positions are resampled from raw bag data to 0.1s intervals via nearest-neighbor
+> lookup. This matches the eval waypoint cadence, so deltas are directly comparable
+> without normalization.
 
 ### Per-Joint Delta Statistics (across all {n_episodes} episodes)
 
