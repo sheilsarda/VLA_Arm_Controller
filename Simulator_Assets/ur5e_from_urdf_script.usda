@@ -50,12 +50,12 @@ def Xform "World"
             float2 clippingRange = (0.01, 1000)
             float focalLength = 15.014
             float horizontalAperture = 20.955
-            custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -1.9614624668238025)
+            custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -5.8438598823144225)
             float verticalAperture = 20.955
             token visibility = "inherited"
-            quatd xformOp:orient = (0.9181172847747803, 0.30719778239593726, 0.23744133345061808, -0.0794467561200319)
+            quatd xformOp:orient = (0.0007549900081494182, -0.0004877616442945676, 0.5426539048581634, 0.8399559105220068)
             float3 xformOp:scale = (1, 1, 1)
-            double3 xformOp:translate = (0.62, -0.78, 1.2)
+            double3 xformOp:translate = (-0.0012639091557946896, 1.4689456147391307, 1.0799109604322805)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
         }
     }
