@@ -228,38 +228,38 @@ The Raw Action Deltas plot confirms this — each inference chunk produces a sma
 ## Training Data Analysis — Ground-Truth Demonstration Deltas
 
 **Date:** 2026-03-27
-**Episodes:** episode_001 through episode_010 (10 total)
+**Episodes:** episode_001 through episode_001 (1 total)
 **Task:** "lift the arm up"
-**Total Samples (resampled at 0.1s):** 3,310
-**Total Delta Samples:** 3,300
+**Total Samples (resampled at 0.1s):** 435
+**Total Delta Samples:** 434
 
 > Positions are resampled from raw bag data to 0.1s intervals via nearest-neighbor
 > lookup. This matches the eval waypoint cadence, so deltas are directly comparable
 > without normalization.
 
-### Per-Joint Delta Statistics (across all 10 episodes)
+### Per-Joint Delta Statistics (across all 1 episodes)
 
 | Joint | Mean Delta (rad) | Std (rad) |
 |---|---|---|
-| shoulder_pan | 0.003049 | 0.288824 |
-| shoulder_lift | 0.003736 | 0.260506 |
-| elbow | -0.005701 | 0.347824 |
-| wrist_1 | 0.000459 | 0.341768 |
-| wrist_2 | 0.001242 | 0.258098 |
-| wrist_3 | -0.006545 | 0.565689 |
+| shoulder_pan | -0.000015 | 0.000270 |
+| shoulder_lift | -0.003518 | 0.003514 |
+| elbow | 0.000200 | 0.000195 |
+| wrist_1 | -0.003918 | 0.003770 |
+| wrist_2 | -0.006003 | 0.005769 |
+| wrist_3 | 0.002646 | 0.002546 |
 
-**Magnitude summary:** median=0.0119, mean=0.1318, max=12.2913
+**Magnitude summary:** median=0.0115, mean=0.0085, max=0.0238
 
 ### Comparison: Training Deltas vs Model Output (Eval Run 2)
 
 | Joint | Training Mean | Training Std | Eval Run 2 Mean | Eval Run 2 Std | Mean Ratio |
 |---|---|---|---|---|---|
-| shoulder_pan | 0.003049 | 0.288824 | 0.000673 | 0.006562 | 0.2x |
-| shoulder_lift | 0.003736 | 0.260506 | -0.000453 | 0.004207 | -0.1x |
-| elbow | -0.005701 | 0.347824 | 0.000273 | 0.002130 | -0.0x |
-| wrist_1 | 0.000459 | 0.341768 | -0.004702 | 0.009731 | -10.3x |
-| wrist_2 | 0.001242 | 0.258098 | -0.003658 | 0.007141 | -2.9x |
-| wrist_3 | -0.006545 | 0.565689 | 0.001193 | 0.004223 | -0.2x |
+| shoulder_pan | -0.000015 | 0.000270 | 0.000673 | 0.006562 | -44.2x |
+| shoulder_lift | -0.003518 | 0.003514 | -0.000453 | 0.004207 | 0.1x |
+| elbow | 0.000200 | 0.000195 | 0.000273 | 0.002130 | 1.4x |
+| wrist_1 | -0.003918 | 0.003770 | -0.004702 | 0.009731 | 1.2x |
+| wrist_2 | -0.006003 | 0.005769 | -0.003658 | 0.007141 | 0.6x |
+| wrist_3 | 0.002646 | 0.002546 | 0.001193 | 0.004223 | 0.5x |
 
 ### Plots
 

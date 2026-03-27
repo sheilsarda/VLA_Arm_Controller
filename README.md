@@ -209,6 +209,12 @@ record_episode() {
 }
 ```
 
+If you've done the bashrc step above
+
+```sh
+record_episode 001
+```
+
 ##### Converting Bags to LeRobot Dataset
 
 From the `openpi` repo (no ROS2 environment needed):
