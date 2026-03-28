@@ -6,8 +6,10 @@ a "Training Data Analysis" section to the eval datadump markdown file.
 
 Usage (run from the VLA_Arm_Controller .venv):
     .venv/bin/python scripts/analyze_training_episodes.py
+    .venv/bin/python scripts/analyze_training_episodes.py --episode episode_003
 """
 
+import argparse
 import os
 from datetime import datetime
 
@@ -109,16 +111,20 @@ def read_episode_joint_states(episode_dir: str, resample_dt: float = 0.1):
     return sample_times, raw_pos[indices]
 
 
-def load_all_episodes():
-    """Load joint states from all training episodes.
+def load_all_episodes(episode_filter=None):
+    """Load joint states from training episodes.
 
+    If episode_filter is given (e.g. "episode_003"), only that episode is loaded.
     Returns a dict with per-episode data and aggregate arrays.
     """
     episodes = {}
     all_deltas_list = []
 
     for i in range(1, 11):
-        ep_dir = os.path.join(TRAINING_DATA_DIR, f"episode_{i:03d}")
+        ep_name = f"episode_{i:03d}"
+        if episode_filter is not None and ep_name != episode_filter:
+            continue
+        ep_dir = os.path.join(TRAINING_DATA_DIR, ep_name)
         if not os.path.isdir(ep_dir):
             print(f"Skipping {ep_dir} (not found)")
             continue
@@ -372,7 +378,15 @@ def append_to_markdown(episodes, all_deltas, magnitudes):
 
 
 def main():
-    episodes, all_deltas = load_all_episodes()
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        "--episode",
+        metavar="NAME",
+        help="Only analyze this episode (e.g. episode_003). Omit to analyze all.",
+    )
+    args = parser.parse_args()
+
+    episodes, all_deltas = load_all_episodes(episode_filter=args.episode)
 
     if not episodes:
         print("No episodes found. Exiting.")

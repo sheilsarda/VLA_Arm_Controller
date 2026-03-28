@@ -64,7 +64,7 @@ CATKIN_IGNORE
 *.pcd
 
 # Eval runs (large rosbags, not for version control)
-# training_data/eval_runs/
+training_data/episode*/
 
 # Planning (if applicable)
 /planning/cfg
