@@ -54,8 +54,6 @@ class VLAControllerNode(Node):
         self.declare_parameter("waypoint_dt", 0.1)
         self.declare_parameter("dry_run", False)
         self.declare_parameter("health_log_period_sec", 2.0)
-        self.declare_parameter("log_inference_packets", True)
-        self.declare_parameter("log_action_chunks", True)
 
         # joint config
         self.declare_parameter(
@@ -92,10 +90,6 @@ class VLAControllerNode(Node):
         self.health_log_period_sec = float(
             self.get_parameter("health_log_period_sec").value
         )
-        self.log_inference_packets = bool(
-            self.get_parameter("log_inference_packets").value
-        )
-        self.log_action_chunks = bool(self.get_parameter("log_action_chunks").value)
 
         self.joint_names = list(self.get_parameter("joint_names").value)
         self.gripper_joint = str(self.get_parameter("gripper_joint").value)
@@ -166,6 +160,10 @@ class VLAControllerNode(Node):
         self._tick_skips_missing_joints = 0
         self._tick_skips_missing_obs = 0
 
+        # action summary (updated each chunk, displayed in HEALTH)
+        self._last_action_mean: Optional[np.ndarray] = None  # mean delta per joint across chunk
+        self._last_action_mag: Optional[float] = None  # mean L2 norm across chunk steps
+
         # policy client handled from background thread because constructor blocks until server is reachable
         self._policy_client: Optional[websocket_client_policy.WebsocketClientPolicy] = None
         self._connect_thread = threading.Thread(target=self._connect_policy_client, daemon=True)
@@ -184,9 +182,7 @@ class VLAControllerNode(Node):
         self.get_logger().info(
             "vla_controller_node started "
             f"(schema=droid, action_mode={self.action_mode}, dry_run={self.dry_run}, "
-            f"health_log_period_sec={self.health_log_period_sec}, "
-            f"log_inference_packets={self.log_inference_packets}, "
-            f"log_action_chunks={self.log_action_chunks})"
+            f"health_log_period_sec={self.health_log_period_sec})"
         )
 
     def _connect_policy_client(self) -> None:
@@ -323,10 +319,6 @@ class VLAControllerNode(Node):
         self._inflight_goal = True
         self._chunks_sent += 1
         self._last_goal_dispatch_time = time.monotonic()
-        if self.log_action_chunks:
-            self.get_logger().info(
-                f"Chunk #{chunk_id}: sent trajectory goal with {len(targets)} points"
-            )
         send_future = self.arm_action_client.send_goal_async(goal)
         send_future.add_done_callback(self._goal_response_cb)
 
@@ -338,8 +330,6 @@ class VLAControllerNode(Node):
                 self._goals_rejected += 1
                 self.get_logger().warn("Trajectory goal rejected by controller")
                 return
-            if self.log_action_chunks:
-                self.get_logger().info("Trajectory goal accepted by controller")
             result_future = goal_handle.get_result_async()
             result_future.add_done_callback(self._goal_result_cb)
         except Exception as exc:
@@ -355,8 +345,6 @@ class VLAControllerNode(Node):
                 self.get_logger().warn(f"Trajectory execution finished with error_code={err}")
             else:
                 self._goals_succeeded += 1
-                if self.log_action_chunks:
-                    self.get_logger().info("Trajectory execution finished successfully")
         except Exception as exc:
             self._goal_errors += 1
             self.get_logger().warn(f"Goal result error: {exc}")
@@ -390,40 +378,35 @@ class VLAControllerNode(Node):
         last_infer_latency = (
             "n/a" if self._last_infer_latency_ms is None else f"{self._last_infer_latency_ms:.1f}"
         )
+        if self._last_action_mean is not None:
+            action_mean_str = np.array2string(self._last_action_mean, precision=3, separator=",")
+            action_mag_str = f"{self._last_action_mag:.3f}"
+        else:
+            action_mean_str = "n/a"
+            action_mag_str = "n/a"
         self.get_logger().info(
             "HEALTH "
             f"uptime={self._format_age(now, self._started_at)} "
             f"openpi={'UP' if client_connected else 'DOWN'} "
-            f"openpi_connected_age={self._format_age(now, self._last_openpi_connect_time)} "
             f"action_server={'UP' if action_server_ready else 'DOWN'} "
-            f"inflight_goal={self._inflight_goal} "
             f"packets_ok={self._packets_received} "
             f"packets_failed={self._packets_failed} "
-            f"packets_invalid={self._packets_invalid} "
             f"consecutive_failures={self._consecutive_infer_failures} "
-            f"chunks_generated={self._chunks_generated} "
             f"chunks_sent={self._chunks_sent} "
-            f"chunks_dropped_not_ready={self._chunks_dropped_not_ready} "
-            f"chunks_dry_run={self._chunks_dry_run} "
+            f"chunks_dropped={self._chunks_dropped_not_ready} "
             f"goals_ok={self._goals_succeeded} "
-            f"goals_rejected={self._goals_rejected} "
             f"goal_errors={self._goal_errors} "
-            f"last_packet_age={self._format_age(now, self._last_packet_time)} "
-            f"last_infer_age={self._format_age(now, self._last_successful_infer_time)} "
-            f"last_goal_age={self._format_age(now, self._last_goal_dispatch_time)} "
             f"last_infer_latency_ms={last_infer_latency} "
-            f"base_img_ready={base_ready} "
-            f"wrist_img_ready={wrist_ready} "
-            f"joint_names_seen={joint_count} "
-            f"base_updates={self._base_image_updates} "
-            f"wrist_updates={self._wrist_image_updates} "
-            f"joint_updates={self._joint_state_updates} "
-            f"ticks_total={self._tick_total} "
-            f"tick_skips(waiting={self._tick_skips_waiting},"
+            f"last_infer_age={self._format_age(now, self._last_successful_infer_time)} "
+            f"action_mean={action_mean_str} "
+            f"action_mag={action_mag_str} "
+            f"obs(base={base_ready},wrist={wrist_ready},joints={joint_count}) "
+            f"ticks={self._tick_total} "
+            f"skips(wait={self._tick_skips_waiting},"
             f"inflight={self._tick_skips_inflight_goal},"
             f"no_client={self._tick_skips_no_client},"
-            f"missing_joints={self._tick_skips_missing_joints},"
-            f"missing_obs={self._tick_skips_missing_obs}) "
+            f"no_joints={self._tick_skips_missing_joints},"
+            f"no_obs={self._tick_skips_missing_obs}) "
             f"openpi_error={last_openpi_error if last_openpi_error else 'none'}"
         )
 
@@ -473,15 +456,6 @@ class VLAControllerNode(Node):
         self._last_successful_infer_time = infer_end
         self._last_infer_latency_ms = (infer_end - infer_start) * 1000.0
         self._consecutive_infer_failures = 0
-        if self.log_inference_packets:
-            if isinstance(result, dict):
-                keys = ",".join(sorted(result.keys()))
-            else:
-                keys = type(result).__name__
-            self.get_logger().info(
-                f"openpi packet #{self._packets_received} received "
-                f"(latency_ms={self._last_infer_latency_ms:.1f}, keys={keys})"
-            )
 
         if not isinstance(result, dict):
             self._packets_invalid += 1
@@ -508,12 +482,10 @@ class VLAControllerNode(Node):
         targets = self._compute_joint_targets(joints, actions, n_steps)
         self._chunks_generated += 1
         chunk_id = self._chunks_generated
-        if self.log_action_chunks:
-            self.get_logger().info(
-                f"Chunk #{chunk_id}: generated from packet #{self._packets_received} "
-                f"(n_steps={n_steps}, actions_shape={actions.shape}, "
-                f"first_action={np.array2string(actions[0, :6], precision=3)})"
-            )
+
+        chunk_actions = actions[:n_steps, :6]
+        self._last_action_mean = chunk_actions.mean(axis=0)
+        self._last_action_mag = float(np.linalg.norm(chunk_actions, axis=1).mean())
 
         # Publish diagnostics for offline visualization.
         raw_msg = Float64MultiArray()

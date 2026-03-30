@@ -1,0 +1,46 @@
+rosbag2_bagfile_information:
+  version: 9
+  storage_identifier: mcap
+  duration:
+    nanoseconds: 59816047084
+  starting_time:
+    nanoseconds_since_epoch: 1774844120264197751
+  message_count: 551
+  topics_with_message_count:
+    - topic_metadata:
+        name: /vla_controller_node/predicted_targets
+        type: std_msgs/msg/Float64MultiArray
+        serialization_format: cdr
+        offered_qos_profiles:
+          []
+        type_description_hash: ""
+      message_count: 27
+    - topic_metadata:
+        name: /vla_controller_node/raw_actions
+        type: std_msgs/msg/Float64MultiArray
+        serialization_format: cdr
+        offered_qos_profiles:
+          []
+        type_description_hash: ""
+      message_count: 27
+    - topic_metadata:
+        name: /joint_states
+        type: sensor_msgs/msg/JointState
+        serialization_format: cdr
+        offered_qos_profiles:
+          []
+        type_description_hash: ""
+      message_count: 497
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - eval_20260329_211520_0.mcap
+  files:
+    - path: eval_20260329_211520_0.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1774844120264197751
+      duration:
+        nanoseconds: 59816047084
+      message_count: 551
+  custom_data: ~
+  ros_distro: jazzy

@@ -87,7 +87,7 @@ Then serve it:
 cd ~/Development/openpi
 uv run scripts/serve_policy.py policy:checkpoint \
   --policy.config=pi0_ur5 \
-  --policy.dir=checkpoints/pi0_ur5/ur5_fast_v1/15000
+  --policy.dir=checkpoints/pi0_ur5/ur5_fast_v1/19999
 ````
 
 ##### Terminal 2: build and launch the ROS2 VLA bridge
