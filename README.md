@@ -87,7 +87,7 @@ Then serve it:
 cd ~/Development/openpi
 uv run scripts/serve_policy.py policy:checkpoint \
   --policy.config=pi0_ur5 \
-  --policy.dir=checkpoints/pi0_ur5/ur5_fast_v1/9999
+  --policy.dir=checkpoints/pi0_ur5/ur5_fast_v1/19999
 ````
 
 ##### Terminal 2: build and launch the ROS2 VLA bridge
@@ -207,6 +207,12 @@ Add this function to `~/.bashrc` for convenience:
 record_episode() {
   ros2 bag record /camera/image_raw /camera_wrist/image_raw /joint_states -o ~/Development/VLA_Arm_Controller/training_data/episode_${1:?usage: record_episode <id>}
 }
+```
+
+If you've done the bashrc step above
+
+```sh
+record_episode 001
 ```
 
 ##### Converting Bags to LeRobot Dataset

@@ -11,8 +11,8 @@ vla_controller_node:
 
     task_instruction: "pick up the block"
     action_mode: "delta"  # delta for fine-tuned UR5 models; velocity for pi0/pi05 DROID baseline
-    action_scale: 1.0
-    velocity_scale: 1.0
+    action_scale: 5.0
+    velocity_scale: 5.0
     open_loop_horizon: 5
     waypoint_dt: 0.1
     dry_run: false

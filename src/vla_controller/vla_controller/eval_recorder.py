@@ -77,8 +77,10 @@ class EvalRecorderNode(Node):
 
         self.declare_parameter("timeout_sec", 0.0)
         self.declare_parameter("replay", "")
+        self.declare_parameter("show_plots", True)
         self.timeout_sec = self.get_parameter("timeout_sec").value
         self.replay_path = str(self.get_parameter("replay").value)
+        self.show_plots = self.get_parameter("show_plots").value
 
         # Accumulated data: list of (timestamp, values) tuples.
         self.joint_positions = []  # (t, np.array(6,))
@@ -367,7 +369,21 @@ class EvalRecorderNode(Node):
                 print("\n*** WARNING: Action magnitudes are near-zero. ***")
                 print("*** The model is likely returning zeros (decode failures). ***")
 
-        plt.show()
+        # Save plots alongside the bag (replay mode) or to the bag directory (live mode).
+        if self.replay_path:
+            out_dir = self.replay_path if os.path.isabs(self.replay_path) else os.path.join(_PROJECT_ROOT, self.replay_path)
+        else:
+            out_dir = self._bag_path
+
+        fig1.savefig(os.path.join(out_dir, "joint_positions.png"), dpi=150, bbox_inches="tight")
+        self.get_logger().info(f"Saved joint_positions.png to {out_dir}")
+        if n_actions > 0:
+            fig2.savefig(os.path.join(out_dir, "raw_action_deltas.png"), dpi=150, bbox_inches="tight")
+            fig3.savefig(os.path.join(out_dir, "action_magnitude.png"), dpi=150, bbox_inches="tight")
+            self.get_logger().info(f"Saved raw_action_deltas.png and action_magnitude.png to {out_dir}")
+
+        if self.show_plots:
+            plt.show()
 
 
 def main():

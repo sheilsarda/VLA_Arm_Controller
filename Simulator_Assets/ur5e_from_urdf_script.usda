@@ -7,8 +7,8 @@
                 double radius = 2.3150762557983398
             }
             dictionary Perspective = {
-                double3 position = (1.236922099582017, 5.876533024872652, 2.342525554452723)
-                double3 target = (0.6184094338233211, 1.4318001674900689, 1.010514970386199)
+                double3 position = (0.38682079315185547, 4.1905412673950195, 2.0499253273010254)
+                double3 target = (-0.23169187260684032, -0.2541915899875624, 0.7179147432344983)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -18,7 +18,7 @@
                 double3 position = (0, 0, 5)
                 double radius = 5
             }
-            string boundCamera = "/World/ur5e/wrist_3_link/wrist_camera"
+            string boundCamera = "/World/Sensors/base_camera"
         }
         dictionary omni_layer = {
             string authoring_layer = "./ur5e_from_urdf_script.usda"
@@ -50,12 +50,12 @@ def Xform "World"
             float2 clippingRange = (0.01, 1000)
             float focalLength = 15.014
             float horizontalAperture = 20.955
-            custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -1.9614624668238025)
+            custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -7.5580627219000895)
             float verticalAperture = 20.955
             token visibility = "inherited"
-            quatd xformOp:orient = (0.9181172847747803, 0.30719778239593726, 0.23744133345061808, -0.0794467561200319)
+            quatd xformOp:orient = (-0.00016545910454384395, -0.0009792885529188273, 0.41973817101802036, 0.9076446889657109)
             float3 xformOp:scale = (1, 1, 1)
-            double3 xformOp:translate = (0.62, -0.78, 1.2)
+            double3 xformOp:translate = (-0.09896785066685643, 2.382952244480013, 2.7788554247970882)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
         }
     }
@@ -368,7 +368,7 @@ def "Render" (
                 no_delete = true
             )
             {
-                rel camera = </OmniverseKit_Persp>
+                rel camera = </World/Sensors/base_camera>
                 token omni:rtx:background:source:texture:textureMode = "repeatMirrored"
                 token omni:rtx:background:source:type = "domeLight"
                 bool omni:rtx:material:db:nonVisualMaterialCSV:enabled = 0
@@ -388,7 +388,7 @@ def "Render" (
                 uint omni:rtx:viewTile:limit = 4294967295
                 rel orderedVars = </Render/Vars/LdrColor>
                 custom bool overrideClipRange = 0
-                uniform int2 resolution = (613, 738)
+                uniform int2 resolution = (1687, 906)
             }
 
             def RenderProduct "base_camera_render_product" (
@@ -528,6 +528,36 @@ def "Render" (
                 custom bool overrideClipRange = 0
                 uniform int2 resolution = (320, 240)
             }
+
+            def RenderProduct "Replicator_06" (
+                prepend apiSchemas = ["OmniRtxSettingsCommonAdvancedAPI_1", "OmniRtxSettingsRtAdvancedAPI_1", "OmniRtxSettingsPtAdvancedAPI_1", "OmniRtxPostColorGradingAPI_1", "OmniRtxPostChromaticAberrationAPI_1", "OmniRtxPostBloomPhysicalAPI_1", "OmniRtxPostMatteObjectAPI_1", "OmniRtxPostCompositingAPI_1", "OmniRtxPostDofAPI_1", "OmniRtxPostMotionBlurAPI_1", "OmniRtxPostTvNoiseAPI_1", "OmniRtxPostTonemapIrayReinhardAPI_1", "OmniRtxPostDebugSettingsAPI_1", "OmniRtxDebugSettingsAPI_1"]
+                hide_in_stage_window = true
+                no_delete = true
+            )
+            {
+                rel camera = </World/Sensors/base_camera>
+                bool omni:rtx:material:db:syncLoads = 1
+                bool omni:rtx:rt:ecoMode:enabled = 0
+                bool omni:rtx:scene:hydra:materialSyncLoads = 1
+                rel orderedVars = </Render/Vars/LdrColor>
+                custom bool overrideClipRange = 0
+                uniform int2 resolution = (320, 240)
+            }
+
+            def RenderProduct "Replicator_07" (
+                prepend apiSchemas = ["OmniRtxSettingsCommonAdvancedAPI_1", "OmniRtxSettingsRtAdvancedAPI_1", "OmniRtxSettingsPtAdvancedAPI_1", "OmniRtxPostColorGradingAPI_1", "OmniRtxPostChromaticAberrationAPI_1", "OmniRtxPostBloomPhysicalAPI_1", "OmniRtxPostMatteObjectAPI_1", "OmniRtxPostCompositingAPI_1", "OmniRtxPostDofAPI_1", "OmniRtxPostMotionBlurAPI_1", "OmniRtxPostTvNoiseAPI_1", "OmniRtxPostTonemapIrayReinhardAPI_1", "OmniRtxPostDebugSettingsAPI_1", "OmniRtxDebugSettingsAPI_1"]
+                hide_in_stage_window = true
+                no_delete = true
+            )
+            {
+                rel camera = </World/ur5e/wrist_3_link/wrist_camera>
+                bool omni:rtx:material:db:syncLoads = 1
+                bool omni:rtx:rt:ecoMode:enabled = 0
+                bool omni:rtx:scene:hydra:materialSyncLoads = 1
+                rel orderedVars = </Render/Vars/LdrColor>
+                custom bool overrideClipRange = 0
+                uniform int2 resolution = (320, 240)
+            }
         }
     }
 
@@ -547,6 +577,8 @@ def "Render" (
             </Render/OmniverseKit/HydraTextures/Replicator_03>,
             </Render/OmniverseKit/HydraTextures/Replicator_04>,
             </Render/OmniverseKit/HydraTextures/Replicator_05>,
+            </Render/OmniverseKit/HydraTextures/Replicator_06>,
+            </Render/OmniverseKit/HydraTextures/Replicator_07>,
         ]
     }
 
@@ -650,10 +682,7 @@ def OmniGraph "ActionGraph"
                 bool isExecution = 1
             }
         )
-        prepend uint inputs:execIn.connect = [
-            </ActionGraph/on_playback_tick.outputs:tick>,
-            </ActionGraph/on_physics_step.outputs:step>,
-        ]
+        prepend uint inputs:execIn.connect = </ActionGraph/on_physics_step.outputs:step>
         custom string inputs:nodeNamespace
         custom string inputs:qosProfile
         custom uint64 inputs:queueSize
@@ -667,10 +696,7 @@ def OmniGraph "ActionGraph"
             }
         )
         custom double inputs:timeStamp
-        prepend double inputs:timeStamp.connect = [
-            </ActionGraph/on_playback_tick.outputs:time>,
-            </ActionGraph/isaac_read_simulation_time.outputs:simulationTime>,
-        ]
+        prepend double inputs:timeStamp.connect = </ActionGraph/isaac_read_simulation_time.outputs:simulationTime>
         custom string inputs:topicName = "joint_states"
         token node:type = "isaacsim.ros2.bridge.ROS2PublishJointState"
         int node:typeVersion = 1
